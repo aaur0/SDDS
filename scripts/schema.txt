@@ -1,0 +1,6 @@
+connect localhost/9160;
+create keyspace dedup;
+use dedup;
+create column family chuncks;
+create column family files;
+
