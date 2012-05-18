@@ -47,7 +47,7 @@ class dblayer:
 		colname = "value"
 		colval = value
 		try:
-			colfamily.insert(row,{colname:value, "recount":0})
+			colfamily.insert(row,{colname:value, "ref":0})
 			logging.info("dblayer:addchunk: Chunk successfully added " )
 		except Exception, e:
 			logging.error("exiting dblayer:addchunk with error %s ",e)
@@ -70,7 +70,12 @@ class dblayer:
 		''' chekcs if key exisits in the Chunk keyspace and returns true/false '''
 		logging.info("inside dblayer:chunkexists to check chunk %", key)
 		try:
-		    #ToDO: add code to check if a chunk exists
+		    colfamily = ColumnFamily(self.pool, CHUNK_COL_FAMILY)
+		    chunk = colfamily.get(key)
+		    if null != chunk:
+			return True
+		    else:
+			return False
 		except, Exception,e:
 		   logging.error("dblayer:chunkexists has failed with error %s", str(e))
 		   throw(e)
@@ -82,6 +87,9 @@ class dblayer:
 		   2. increment the refcount entry by 1
 		   3. update the entry
 		'''
-		pass
+		 colfamily = ColumnFamily(self.pool, CHUNK_COL_FAMILY)
+                 chunk = colfamily.get(key)
+                 chunk['ref'] = str(int(chunk['ref']+1))
+                 colfamily.insert(key,chunk)
 
 	
