@@ -28,7 +28,7 @@ class dblayer:
 		     self.sysmgr = SystemManager(address)
 	             self.pool = ConnectionPool(KEYSPACE, [address])
 		     self.filecolfam = ColumnFamily(self.pool, FILE_COL_FAMILY)
-		     self.chunkcolfam = ColumnFamily(self.pool, CHUNk_COL_FAMILY)
+		     self.chunkcolfam = ColumnFamily(self.pool, CHUNK_COL_FAMILY)
 		     logging.info("Exiting dblayer:__init__ :  connection to cassandra successful")
 		except Exception, e:
 		     logging.error("Exiting dblayer with error %s" ,str(e))
