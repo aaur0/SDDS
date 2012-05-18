@@ -66,10 +66,15 @@ class chunker:
 						self.db.add_chunk(key,chunk)
 						total_data_written+=40000
 					chunklist.append(key)
+					#optimization to reduce footprint of the app
+					if len(chunklist) > 500:
+                                                logging.info("chunker:chunkify : calling add file entry method  to add %s chunk entries", len(chunklist))
+						self.db.add_file_entry(path, chunklist)
+						chunklist = []						
 					chunk = f.read(CHUNK_SIZE)
 					logging.info("chunker:chunkify :: a chunk of size %s  and type %s was read", str(len(chunk)), type(chunk))
 
-			logging.info("chunker:chunkify : calling add file entry method")
+			logging.info("chunker:chunkify : calling add file entry method to add %s chunk entries",len(chunklist))
 			self.db.add_file_entry(path, chunklist)			
 			end_time = datetime.now()
 			total_time_taken = end_time - start_time

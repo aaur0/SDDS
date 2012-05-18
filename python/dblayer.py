@@ -27,6 +27,8 @@ class dblayer:
 		try:
 		     self.sysmgr = SystemManager(address)
 	             self.pool = ConnectionPool(KEYSPACE, [address])
+		     self.filecolfam = ColumnFamily(self.pool, FILE_COL_FAMILY)
+		     self.chunkcolfam = ColumnFamily(self.pool, CHUNk_COL_FAMILY)
 		     logging.info("Exiting dblayer:__init__ :  connection to cassandra successful")
 		except Exception, e:
 		     logging.error("Exiting dblayer with error %s" ,str(e))
@@ -42,7 +44,7 @@ class dblayer:
 		  		
                 '''
 		logging.info("dblayer:addchunk : enter with param key as %s", str(key))
-		colfamily = ColumnFamily(self.pool,CHUNK_COL_FAMILY)
+		colfamily = self.chunkcolfam
 		row = key
 		colname = "value"
 		colval = value
@@ -56,7 +58,7 @@ class dblayer:
 	def add_file_entry(self, filename, chunklist):
 		''' method to add an entry to files columnfamily '''
 		logging.info("dblayer:addfileentry  : entered with filename as %s" , filename)
-		colfamily = ColumnFamily(self.pool, FILE_COL_FAMILY)
+		colfamily = self.filecolfam
 		chunknumbers = range(0, len(chunklist))
 		chunkstr = list(map(str,chunknumbers))
 		entries =  dict(zip(chunkstr, chunklist))
@@ -73,7 +75,7 @@ class dblayer:
 		''' chekcs if key exisits in the Chunk keyspace and returns true/false '''
 		logging.info("inside dblayer:chunkexists to check chunk %s", str(key))
 		try:
-		    colfamily = ColumnFamily(self.pool, CHUNK_COL_FAMILY)
+		    colfamily = self.chunkcolfam
 		    chunk = colfamily.get(key)
 		    if None != chunk:
 			return True
@@ -86,7 +88,7 @@ class dblayer:
 		''' checks if an entry for file alread exists in DB '''
 		logging.info("inside dblayer:file_exists method	with filename = %s", key)	
 		try:
-                    colfamily = ColumnFamily(self.pool, FILE_COL_FAMILY)
+                    colfamily = self.filecolfam
                     chunk = colfamily.get(key)
                     if None != chunk:
                         return True
@@ -104,7 +106,7 @@ class dblayer:
 		 '''
 		 try:
 		 	logging.info("dblayer:update_chunk_ref invoked for key : %s", key)
-			colfamily = ColumnFamily(self.pool, CHUNK_COL_FAMILY)
+			colfamily = self.chunkcolfam
 	                chunk = colfamily.get(key)
         	        chunk['ref'] = str(int(chunk['ref'])+value)
                 	colfamily.insert(key,chunk)
