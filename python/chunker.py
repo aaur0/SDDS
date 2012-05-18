@@ -52,6 +52,7 @@ class chunker:
 		        total_data_written = 0	
 			with open(path, 'rb') as f:
 				chunk = f.read(CHUNK_SIZE)
+				blocks_already_present = 0
                                 logging.info("chunker:chunkify :: a chunk of size %s  and type %s was read", str(len(chunk)), type(chunk))
 				while("" != chunk):
 					key = self._getmd5(chunk)
@@ -61,10 +62,11 @@ class chunker:
 					if(self.db.chunk_exists(key)):
 						logging.info("chunker:chunkify : calling update chunk reference")
 						self.db.update_chunk_ref(key)
+						blocks_already_present+=1
 					else:
 						logging.info("chunker:chunkify : calling add chunk method")
 						self.db.add_chunk(key,chunk)
-						total_data_written+=40000
+						total_data_written+=sys.getsizeof(chunk)
 					chunklist.append(key)
 					#optimization to reduce footprint of the app
 					if len(chunklist) > 500:
@@ -73,14 +75,14 @@ class chunker:
 						chunklist = []						
 					chunk = f.read(CHUNK_SIZE)
 					logging.info("chunker:chunkify :: a chunk of size %s  and type %s was read", str(len(chunk)), type(chunk))
-
+                    
 			logging.info("chunker:chunkify : calling add file entry method to add %s chunk entries",len(chunklist))
 			self.db.add_file_entry(path, chunklist)			
 			end_time = datetime.now()
 			total_time_taken = end_time - start_time
 			total_time_taken_in_min = (total_time_taken.total_seconds())/60
 			total_space_saved = ((file_size) - total_data_written)
-			logging.info("chunker:chunkify : successfully completed. It took %s minutes. Original Size of file : %s, New size of file : %s, Total space saved : %s bytes", total_time_taken_in_min,file_size, total_data_written, total_space_saved)	
+			logging.info("chunker:chunkify : successfully completed. It took %s minutes. Original Size of file : %s, New size of file : %s, Total space saved : %s bytes. Total block already present : %s ", total_time_taken_in_min,file_size, total_data_written, total_space_saved, blocks_already_present)	
 			        	
 		except Exception,e:
 			logging.error('chunker:chunkify failed with error : %s', str(e))
