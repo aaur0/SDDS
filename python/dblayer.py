@@ -1,4 +1,4 @@
-!# /usr/lib/exec python
+#! /usr/lib/exec python
 
 # Pycassa library is used to communicate with cassandra. It can be installed as :
 # sudo apt-get install python-pip
@@ -21,7 +21,7 @@ FILE_COL_FAMILY = 'files'
 class dblayer:
 	def __init__(self):
 		''' setup a connection to cassandra '''
-		logging.basic_config(filename = LOGFILENAME, format = '%(level)s %(asctime)s %(message)s')
+		logging.basicConfig(filename = LOGFILENAME, format = '%(asctime)s %(message)s')
 		logging.info("inside dblayer:__init__ method")
 		address = "%s:%s" % (HOST,PORT)
 		try:
@@ -59,14 +59,14 @@ class dblayer:
 		colfamily = ColumnFamily(self.pool, FILE_COL_FAMILY)
 		chunknumbers = range(0, len(chunklist))
 	        try:
-			colfamily.insert(filename, {zip(chunknumbers, chunklist)}
+			colfamily.insert(filename, {zip(chunknumbers, chunklist)})
 			logging.info("dblayer:addfileentry : entry for file %s created ", filename)
 		except Exception,e :
 			logging.error("dblayer:addfileentry has errors %s ",str(e))
 		
 
 
-	def chunk_exists(self, key)
+	def chunk_exists(self, key):
 		''' chekcs if key exisits in the Chunk keyspace and returns true/false '''
 		logging.info("inside dblayer:chunkexists to check chunk %", key)
 		try:
@@ -76,17 +76,17 @@ class dblayer:
 			return True
 		    else:
 			return False
-		except, Exception,e:
+		except Exception,e:
 		   logging.error("dblayer:chunkexists has failed with error %s", str(e))
 		   throw(e)
 
 
 	def update_chunk_ref(self, key):
-		''' method to update the reference count of a exisitng chunk 
+		 ''' method to update the reference count of a exisitng chunk 
 		   1. fetch the chunk
 		   2. increment the refcount entry by 1
 		   3. update the entry
-		'''
+		 '''
 		 colfamily = ColumnFamily(self.pool, CHUNK_COL_FAMILY)
                  chunk = colfamily.get(key)
                  chunk['ref'] = str(int(chunk['ref']+1))

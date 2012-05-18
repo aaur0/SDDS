@@ -1,4 +1,4 @@
-!# /usr/bin/exec python
+#! /usr/bin/exec python
 
 import logging
 import md5,sys,os
@@ -7,14 +7,11 @@ from dblayer import *
 LOG_FILE_NAME = 'vmdedup.log'
 class chunker:
 	''' This class all the code required for the chunking service. This service will be responsible for splitting of file into chunks and store them in cassandra '''
-	def __init__():
-		'''  
-		    1. setup connection to cassandra
-		    2. intialise logger object 
-		 '''
-		 try:
+	def __init__(self):
+		 '''     1. setup connection to cassandra   2. intialise logger object   '''
+	         try:
 			 global LOG_FILE_NAME
-			 logging.basic_config(filename =LOG_FILE_NAME, format='%(level)s %(asctime)s %(message)s')
+			 logging.basicConfig(filename =LOG_FILE_NAME, format='%(asctime)s %(message)s')
 			 self.db = dblayer()
 		 except Exception,e:
 			logging.error("chunker:__init__ failed with error %s", e)
@@ -82,9 +79,9 @@ class chunker:
 
 if __name__ == '__main__':
 	if len(sys.argv) !=2:
-		logging.error("invalid argumnets specified : chunkify <pathtothefile> "
+		logging.error("invalid argumnets specified : chunkify <pathtothefile> ")
 		sys.exit(1)
 	else:
-		chunkerobj = new chunker(sys.argv[1])
-		chunkerobj.chunkify()
+		chunkerobj = chunker()
+		chunkerobj.chunkify(sys.argv[1])
 		
