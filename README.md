@@ -1,4 +1,4 @@
 vmdedup
 =======
 
-Deduplication Storage for VMs
+Deduplication Storage for virtual machine snapshots.
