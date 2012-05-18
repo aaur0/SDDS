@@ -32,7 +32,7 @@ class dblayer:
 		     logging.error("Exiting dblayer with error %s" ,str(e))
 
 
-	def addchunk(self, key, value):
+	def add_chunk(self, key, value):
 		''' method to add chunk to chunks columnfamily 
 		    key<String> : MD5 hash of the chunk to be added
 		    value       : bytes to be written as value of the chunk
@@ -53,7 +53,7 @@ class dblayer:
 			logging.error("exiting dblayer:addchunk with error %s ",e)
 		
 
-	def addfileentry(self, filename, chunklist):
+	def add_file_entry(self, filename, chunklist):
 		''' method to add an entry to files columnfamily '''
 		logging.info("dblayer:addfileentry  : entered with filename as %s" , filename)
 		colfamily = ColumnFamily(self.pool, FILE_COL_FAMILY)
@@ -66,7 +66,7 @@ class dblayer:
 		
 
 
-	def chunkexists(self, key)
+	def chunk_exists(self, key)
 		''' chekcs if key exisits in the Chunk keyspace and returns true/false '''
 		logging.info("inside dblayer:chunkexists to check chunk %", key)
 		try:
@@ -74,3 +74,14 @@ class dblayer:
 		except, Exception,e:
 		   logging.error("dblayer:chunkexists has failed with error %s", str(e))
 		   throw(e)
+
+
+	def update_chunk_ref(self, key):
+		''' method to update the reference count of a exisitng chunk 
+		   1. fetch the chunk
+		   2. increment the refcount entry by 1
+		   3. update the entry
+		'''
+		pass
+
+	
