@@ -79,3 +79,12 @@ class chunker:
 	def _getchunk(self, fhandler, offset):
 		''' given a offset creats a chunk of the file and returns it back '''
 		pass
+
+if __name__ == '__main__':
+	if len(sys.argv) !=2:
+		logging.error("invalid argumnets specified : chunkify <pathtothefile> "
+		sys.exit(1)
+	else:
+		chunkerobj = new chunker(sys.argv[1])
+		chunkerobj.chunkify()
+		
