@@ -1,6 +1,12 @@
 connect localhost/9160;
-create keyspace dedup;
-use dedup;
-create column family chunk;
-create column family files;
+
+create keyspace minhash_ks;
+use minhash_ks;
+create column family chunk_cf;
+create column family files_cf;
+create column family fullhash_cf;
+
+create keyspace files_ks;
+use files_ks;
+create column family minhash_cf;
 
