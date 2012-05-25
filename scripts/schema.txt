@@ -1,12 +1,12 @@
 connect localhost/9160;
 
-create keyspace minhash_ks;
-use minhash_ks;
-create column family chunk_cf;
-create column family files_cf;
-create column family fullhash_cf;
+create keyspace minhash;
+use minhash;
+create column family chunks; # list of merged chunk ids and their data
+create column family filerecipe; # list of file names and their chunk ids
+create column family fullhash; # list of full hashes
 
-create keyspace files_ks;
-use files_ks;
-create column family minhash_cf;
+create keyspace files; 
+use files;
+create column family minhash; # one to one mapping of files and its minhash
 
