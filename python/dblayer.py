@@ -6,6 +6,15 @@
 # For more inforamtion visit
 # http://pycassa.github.com/pycassa/installation.html
 
+#create keyspace minhash;
+#use minhash;
+#create column family chunks; # list of merged chunk ids and their data
+#create column family filerecipe; # list of file names and their chunk ids
+#create column family fullhash; # list of full hashes
+
+#create keyspace files; 
+#use files;
+#create column family minhash; # one to one mapping of files and its minhash
 
 import logging,sys
 from pycassa.system_manager import *
@@ -14,9 +23,13 @@ from pycassa import ColumnFamily
 LOGFILENAME = 'dblayer.log'
 HOST = 'localhost'
 PORT = '9160'
-KEYSPACE = 'dedup'
-CHUNK_COL_FAMILY = 'chunk'
-FILE_COL_FAMILY = 'files'
+FILES_KEYSPACE = 'files'
+MINHASH_KEYSPACE = 'minhash'
+# CHUNK_COL_FAMILY = 'chunk'
+CHUNKS_COL_FAMILY = 'chunks'
+FILERECIPE_COL_FAMILY = 'filerecipe'
+FULLHASH_COL_FAMILY = 'fullhash'
+MINHASH_COL_FAMILY = 'minhash'
 
 class dblayer:
 	def __init__(self):
