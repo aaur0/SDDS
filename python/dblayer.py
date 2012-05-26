@@ -72,7 +72,7 @@ class dblayer:
 		colname = chunk_hash
 		colval = chunk_data
 		try:
-			colfamily.insert(row,{colname:colval, "ref":"0"})
+			colfamily.insert(row,{colname:colval, "ref":"1"})
 			logging.info("dblayer:addchunk: Chunk successfully added " )
 		except Exception, e:
 			logging.error("exiting dblayer:addchunk with error %s ", str(e))
@@ -118,7 +118,22 @@ class dblayer:
                    return False
 
 
-	def update_chunk_ref(self, key,value=1):
+	def get_chunk_list(self, minhash):
+		colfamily = self.minhash_chunk_cf
+	        chunk_list = colfamily.get(minhash)
+	        return chunk_list
+	        
+	def insert_chunk_list(self, minhash, chunk_map):
+		colfamily = self.minhash_chunk_cf
+		db_chunk_list = colfamily.get(minhash)
+		
+		
+	        # colfamily.insert(minhash, chunk_list)
+	        
+	        
+	def delete_chunk_list(self, minhash, chunk_list_ids
+	
+	def update_chunk_ref(self, minhash, chunk_hash, db_chunk_list, value=1):
 		 ''' method to update the reference count of a exisitng chunk 
 		   1. fetch the chunk
 		   2. increment the refcount entry by 1
@@ -126,13 +141,10 @@ class dblayer:
 		 '''
 		 try:
 		 	logging.info("dblayer:update_chunk_ref invoked for key : %s", key)
-			colfamily = self.chunkcolfam
-	                chunk = colfamily.get(key)
-        	        chunk['ref'] = str(int(chunk['ref'])+value)
-                	colfamily.insert(key,chunk)
+	                chunk_list[chunk_hash]['ref'] = str(int(chunk['ref']) + value)
+        	        if chunk_list[chunk_hash]['ref'] == "0":
+        	        	del chunk_list[chunk_hash]
 			logging.info("dblayer:update_chunk_ref successful")
 		 except Exception,e:
 			logging.error("dblayer:update_chunk_ref failed with error : %s", str(e))
 			raise e
-
-	
