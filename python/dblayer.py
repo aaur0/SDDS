@@ -57,9 +57,9 @@ class dblayer:
 		     raise e
 
 
-	def add_chunk(self, key, value):
+	def add_chunk(self, minhash, chunk_hash, chunk_data):
 		''' method to add chunk to chunks columnfamily 
-		    key<String> : MD5 hash of the chunk to be added
+		    key<String> : minhash - MD5 hash of the chunk to be added
 		    value       : bytes to be written as value of the chunk
 
 		    Assumptions:
@@ -67,12 +67,12 @@ class dblayer:
 		  		
                 '''
 		logging.info("dblayer:addchunk : enter with param key as %s", str(key))
-		colfamily = self.chunkcolfam
-		row = key
-		colname = "value"
-		colval = value
+		colfamily = self.minhash_chunk_cf
+		row = minhash
+		colname = chunk_hash
+		colval = chunk_data
 		try:
-			colfamily.insert(row,{colname:value, "ref":"0"})
+			colfamily.insert(row,{colname:colval, "ref":"0"})
 			logging.info("dblayer:addchunk: Chunk successfully added " )
 		except Exception, e:
 			logging.error("exiting dblayer:addchunk with error %s ", str(e))
