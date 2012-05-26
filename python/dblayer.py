@@ -81,9 +81,10 @@ class dblayer:
 	def add_file_entry(self, filename, chunklist):
 		''' method to add an entry to files columnfamily '''
 		logging.info("dblayer:addfileentry  : entered with filename as %s" , filename)
-		colfamily = self.filecolfam
+		colfamily = self.minhash_files_cf
 		chunknumbers = range(0, len(chunklist))
 		chunkstr = list(map(str,chunknumbers))
+		# numbers are strings here ! 
 		entries =  dict(zip(chunkstr, chunklist))
 		logging.info("totalchunks = %s and totalchunklist = %s and entries = %s", len(chunkstr), len(chunklist), len(entries))
 	        try:
