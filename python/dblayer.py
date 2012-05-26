@@ -77,7 +77,18 @@ class dblayer:
 		except Exception, e:
 			logging.error("exiting dblayer:addchunk with error %s ", str(e))
 		
-
+	def add_full_hash(self, min_hash, full_hash):
+		''' method to add full hash entry in the fullhash col fam'''
+		logging.info("dblayer:add_full_hash : min_hash : %s , fullhash : %s", min_hash, full_hash)
+		colfamily = self.minhash_fullhash_cf
+		try:
+			colfamily.insert(minhash, {full_hash:"-"})
+			logging.info("dblayer:add_full_hash : Full_hash %s created for Min_Hash %s ", full_hash, min_hash)
+		except Exception, e:
+			logging.info("dblayer:add_full_hash failed with error : %s", e)
+			raise e
+	
+		
 	def add_file_entry(self, filename, chunklist):
 		''' method to add an entry to files columnfamily '''
 		logging.info("dblayer:addfileentry  : entered with filename as %s" , filename)
