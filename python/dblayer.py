@@ -88,7 +88,14 @@ class dblayer:
 			logging.info("dblayer:add_full_hash failed with error : %s", e)
 			raise e
 	
-		
+	def add_file_recipe(self, minhash, file_identifier, chunk_hash_list): 
+        	colfamily = self.minhash_filerecipe_cf
+        	dict = {}
+        	for number, chunk_hash in enumerate(chunk_hash_list)
+        		dict[number] = chunk_hash
+        	colfamily.insert(minhash, {file_identifier: dict})
+        
+	
 	def add_file_entry(self, filename, chunklist):
 		''' method to add an entry to files columnfamily '''
 		logging.info("dblayer:addfileentry  : entered with filename as %s" , filename)
