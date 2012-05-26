@@ -142,23 +142,25 @@ class dblayer:
 			raise e
 		
 	
-	def file_exists(self, file_id):
+	def is_file_exists(self, file_id):
 		''' checks if an entry for file alread exists in DB '''
 		logging.info("inside dblayer:file_exists method	with filename = %s", key)	
 		try:
                     colfamily = self.files_minhash_cf
                     file = colfamily.get(file_id)
                     # chunk = colfamily.get(key)
-                    return None != file
+                    # If the file_id exists, return minhash; otherwise return None
+                    return file.keys()[0] if None != file else None            	    
                 except Exception,e:
-                   return False
+                   return None
 
 
 	def get_chunk_list(self, minhash):
 		colfamily = self.minhash_chunk_cf
 	        chunk_list = colfamily.get(minhash)
 	        return chunk_list
-	        
+	
+	
 	def insert_chunk_list(self, minhash, chunk_map):
 		colfamily = self.minhash_chunk_cf
 		db_chunk_map = colfamily.get(minhash)
@@ -200,9 +202,11 @@ class dblayer:
 			raise e
 
 	
-	def is_file_exact_duplicate(self, minhash, wholehash):
+	def is_fullhash_exists(self, minhash, fullhash):
 		''' method to check if there's already an exact copy of the file. 	
 		    It's determined by comparing the wholehash.
 	    	'''
 	    	colfamily = self.minhash_fullhash_cf
-	    	return colfamily.get(minhash).has_key(wholehash)
+	    	return colfamily.get(minhash).has_key(fullhash)
+	
+	
