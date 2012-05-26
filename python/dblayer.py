@@ -129,7 +129,7 @@ class dblayer:
 		for chunk_hash in chunk_map.keys():
 			if db_chunk_map.has_key( chunk_hash ):
                                 value = chunk_map.get(chunk_hash)		
-				db_chunk_map[chunk_hash]['ref'] += value.ref_count
+				db_chunk_map[chunk_hash]['ref'] = str(int(db_chunk_map[chunk_hash]['ref']) + value.ref_count)
 			else:
 				db_chunk_map[chunk_hash]['data']= value.data
 				db_chunk_map[chunk_hash]['ref'] = value.ref_count
@@ -137,7 +137,15 @@ class dblayer:
 	        #	update_chunk_ref(this, minhash, chunk_hash,db_chunk_map,1)
 		
 	        
-	def delete_chunk_list(self, minhash, chunk_list_ids
+	def delete_chunk_list(self, minhash, chunk_map):
+		colfamily = self.minhash_chunk_cf
+		db_chunk_map = colfamily.get(minhash)
+		for chunk_hash in chunk_map.keys():
+			if db_chunk_map.has_key( chunk_hash ):
+                                value = chunk_map.get(chunk_hash)
+                                db_chunk_map[chunk_hash]['ref'] -= value.ref_count
+		        if chunk_list[chunk_hash]['ref'] == "0":
+        	        	del chunk_list[chunk_hash]
 	
 	def update_chunk_ref(self, minhash, chunk_hash, db_chunk_map, value=1):
 		 ''' method to update the reference count of a exisitng chunk 
