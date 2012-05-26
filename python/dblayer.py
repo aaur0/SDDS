@@ -106,16 +106,14 @@ class dblayer:
 		except Exception,e:
 		   return False
 	
-	def file_exists(self,key):
+	def file_exists(self, file_id):
 		''' checks if an entry for file alread exists in DB '''
 		logging.info("inside dblayer:file_exists method	with filename = %s", key)	
 		try:
-                    colfamily = self.filecolfam
-                    chunk = colfamily.get(key)
-                    if None != chunk:
-                        return True
-                    else:
-                        return False
+                    colfamily = self.files_minhash_cf
+                    file = colfamily.get(file_id)
+                    # chunk = colfamily.get(key)
+                    return None != file
                 except Exception,e:
                    return False
 
