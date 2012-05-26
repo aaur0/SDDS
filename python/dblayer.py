@@ -56,7 +56,6 @@ class dblayer:
 		     logging.error("Exiting dblayer with error %s" ,str(e))
 		     raise e
 
-
 	def add_chunk(self, minhash, chunk_hash, chunk_data):
 		''' method to add chunk to chunks columnfamily 
 		    key<String> : minhash - MD5 hash of the chunk to be added
@@ -124,7 +123,7 @@ class dblayer:
 		except Exception,e:
 		   return False
 	
-	def add_min_hash(self, filename, minhash)
+	def add_min_hash(self, filename, minhash):
 		''' method to add filename and minhash in files_minhash_cf '''
 		logging.info("inside dblayer::add_min_hash method with filename = %s, minhash = %s", filename, minhash)
 		colfamily = self.files_minhash_cf
@@ -133,6 +132,15 @@ class dblayer:
 		except Exception, e:
 			logging.error("dblayer: add_min_hash raised an error : %s", e)
 			raise e
+			
+	def get_minhash(self, file_id):
+		colfamily = self.files_minhash_cf
+		try:
+			return colfamily.get(filename)
+		except Exception, e:
+			logging.error("dblayer: get_minhash raised an error : %s", e)
+			raise e
+		
 	
 	def file_exists(self, file_id):
 		''' checks if an entry for file alread exists in DB '''
