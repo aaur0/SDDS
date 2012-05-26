@@ -198,3 +198,11 @@ class dblayer:
 		 except Exception,e:
 			logging.error("dblayer:update_chunk_ref failed with error : %s", str(e))
 			raise e
+
+	
+	def is_file_exact_duplicate(self, minhash, wholehash):
+		''' method to check if there's already an exact copy of the file. 	
+		    It's determined by comparing the wholehash.
+	    	'''
+	    	colfamily = self.minhash_fullhash_cf
+	    	return colfamily.get(minhash).has_key(wholehash)
