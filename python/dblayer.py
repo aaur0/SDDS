@@ -27,11 +27,11 @@ PORT = '9160'
 MINHASH_KEYSPACE = 'minhash'
 FILES_KEYSPACE = 'files'
 # column families of minhash keyspace
-CHUNKS_COL_FAMILY = 'minhash_chunks'
-FILERECIPE_COL_FAMILY = 'minhash_filerecipe'
-FULLHASH_COL_FAMILY = 'minhash_fullhash'
+MINHASH_CHUNKS_CF = 'minhash_chunks'
+MINHASH_FILERECIPE_CF = 'minhash_filerecipe'
+MINHASH_FULLHASH_CF = 'minhash_fullhash'
 # column families of files keyspace
-MINHASH_COL_FAMILY = 'files_minhash'
+FILES_MINHASH_CF = 'files_minhash'
 
 class dblayer:
 	def __init__(self):
@@ -41,13 +41,21 @@ class dblayer:
 		address = "%s:%s" % (HOST,PORT)
 		try:
 		     self.sysmgr = SystemManager(address)
-	             self.pool = ConnectionPool(KEYSPACE, [address])
-		     self.filecolfam = ColumnFamily(self.pool, FILE_COL_FAMILY)
-		     self.chunkcolfam = ColumnFamily(self.pool, CHUNK_COL_FAMILY)
+	             
+	             self.minhash_pool = ConnectionPool(MINHASH_KEYSPACE, [address])
+	             self.minhash_chunks_cf = ColumnFamily(self.minhash_pool, MINHASH_CHUNKS_CF)
+		     self.minhash_filerecipe_cf = ColumnFamily(self.minhash_pool, MINHASH_FILERECIPE_CF)
+		     self.minhash_fullhash_cf = ColumnFamily(self.minhash_pool, MINHASH_FULLHASH_CF)
+		     
+	             self.files_pool = ConnectionPool(FILES_KEYSPACE, [address])
+		     self.files_minhash_cf = ColumnFamily(self.files_pool, FILES_MINHASH_CF)
+		     
 		     logging.info("Exiting dblayer:__init__ :  connection to cassandra successful")
+		     
 		except Exception, e:
 		     logging.error("Exiting dblayer with error %s" ,str(e))
 		     raise e
+
 
 	def add_chunk(self, key, value):
 		''' method to add chunk to chunks columnfamily 
