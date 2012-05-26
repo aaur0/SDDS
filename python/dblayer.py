@@ -23,13 +23,15 @@ from pycassa import ColumnFamily
 LOGFILENAME = 'dblayer.log'
 HOST = 'localhost'
 PORT = '9160'
-FILES_KEYSPACE = 'files'
+# keyspaces
 MINHASH_KEYSPACE = 'minhash'
-# CHUNK_COL_FAMILY = 'chunk'
-CHUNKS_COL_FAMILY = 'chunks'
-FILERECIPE_COL_FAMILY = 'filerecipe'
-FULLHASH_COL_FAMILY = 'fullhash'
-MINHASH_COL_FAMILY = 'minhash'
+FILES_KEYSPACE = 'files'
+# column families of minhash keyspace
+CHUNKS_COL_FAMILY = 'minhash_chunks'
+FILERECIPE_COL_FAMILY = 'minhash_filerecipe'
+FULLHASH_COL_FAMILY = 'minhash_fullhash'
+# column families of files keyspace
+MINHASH_COL_FAMILY = 'files_minhash'
 
 class dblayer:
 	def __init__(self):
