@@ -95,16 +95,14 @@ class dblayer:
 			sys.exit(1)	
 
 
-	def chunk_exists(self, key):
+	def chunk_exists(self, minhash, chunk_hash):
 		''' chekcs if key exisits in the Chunk keyspace and returns true/false '''
 		logging.info("inside dblayer:chunkexists to check chunk %s", str(key))
 		try:
-		    colfamily = self.chunkcolfam
-		    chunk = colfamily.get(key)
-		    if None != chunk:
-			return True
-		    else:
-			return False
+		    colfamily = self.minhash_chunk_cf
+		    chunk_list = colfamily.get(minhash)
+		    val = chunk_list.has_key(chunk_hash)
+		    return (None != val)
 		except Exception,e:
 		   return False
 	
