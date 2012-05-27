@@ -76,7 +76,7 @@ class dblayer:
 		except Exception, e:
 			logging.error("exiting dblayer:addchunk with error %s ", str(e))
 		
-	def add_full_hash(self, min_hash, full_hash):
+	def add_fullhash(self, min_hash, full_hash):
 		''' method to add full hash entry in the fullhash col fam'''
 		logging.info("dblayer:add_full_hash : min_hash : %s , fullhash : %s", min_hash, full_hash)
 		colfamily = self.minhash_fullhash_cf
@@ -118,7 +118,7 @@ class dblayer:
 		except Exception,e:
 		   return False
 	
-	def add_min_hash(self, filename, minhash):
+	def add_minhash(self, filename, minhash):
 		''' method to add filename and minhash in files_minhash_cf '''
 		logging.info("inside dblayer::add_min_hash method with filename = %s, minhash = %s", filename, minhash)
 		colfamily = self.files_minhash_cf
@@ -201,6 +201,7 @@ class dblayer:
 		''' method to check if there's already an exact copy of the file. 	
 		    It's determined by comparing the wholehash.
 	    	'''
+	    	logger.info("dblayer: is_fullhash_exists")
 	    	colfamily = self.minhash_fullhash_cf
 	    	return colfamily.get(minhash).has_key(fullhash)
 	
@@ -208,6 +209,7 @@ class dblayer:
 	def get_file_data(self, minhash, file_id):
 		''' method to re-assemble the chunks from the metadata associated with the given file. '''
 		# First, get the chunk ids (hashes) from the filerecipe column family.
+		logger.info("dblayer: get_file_data")
 		filerecipe = self.minhash_filerecipe
 		chunk_id_map = filerecipe.get(file_id)
 		chunk_data_list = []
