@@ -2,8 +2,8 @@ connect localhost/9160;
 
 create keyspace minhash;
 use minhash;
-create column family minhash_chunks; # list of merged chunk ids and their data
-create column family minhash_filerecipe; # list of file names and their chunk ids
+create column family minhash_chunks with column_type=Super; # list of merged chunk ids and their data
+create column family minhash_filerecipe with column_type=Super; # list of file names and their chunk ids
 create column family minhash_fullhash; # list of full hashes
 
 create keyspace files; 
