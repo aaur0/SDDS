@@ -7,7 +7,7 @@ from datetime import datetime
 
 
 LOG_FILE_NAME = 'vmdedup.log'
-CHUNK_SIZE = 40000
+CHUNK_SIZE = 4 * 1024 # 4 kb size
 class chunker:
 	''' This class all the code required for the chunking service. This service will be responsible for splitting of file into chunks and store them in cassandra '''
 	def __init__(self):
@@ -20,7 +20,6 @@ class chunker:
 			logging.error("chunker:__init__ failed with error %s", e)
 			sys.exit(1)
 		
-
 	def chunkify(self,path):
 		'''
 			0.1: check if entry for the file exists in DB
@@ -39,54 +38,59 @@ class chunker:
 		logging.info("chunker:Chunkify: creating chunks for the file :%s",path)
 		try:
 			
-			chunklist = []			
 			if(not os.path.exists(path)):
 			  logging.error("chunkify: chunker : invalied file specified")
 			  sys.exit(1)
-			elif (self.db.file_exists(path)):
+			if(self.db.is_file_exists(path)):
 			  logging.error("chunkify: chunker :: an entry for file already exists in db")
 			  sys.exit(1)
+			
+			chunkmap = {}	
+			minhash = None
+			fullhash = md5.new()
+			
 			start_time = datetime.now()
 			file_size = os.path.getsize(path)
 			logging.info("chunker:chunkify :: file shredding initiated for filesize :: %s (bytes) at time: %s", file_size, start_time) 
 		        total_data_written = 0	
 			with open(path, 'rb') as f:
-				chunk = f.read(CHUNK_SIZE)
 				blocks_already_present = 0
                                 logging.info("chunker:chunkify :: a chunk of size %s  and type %s was read", str(len(chunk)), type(chunk))
-				while("" != chunk):
+				while(True):
+					chunk = f.read(CHUNK_SIZE)
+					if("" == chunk):
+						break
 					key = self._getmd5(chunk)
+					
 					if(None == key):
 						 logging.error('chunker:chunkify failed with error : md5  hash was returned as None')
 			                         sys.exit(1)
-					if(self.db.chunk_exists(key)):
-						logging.info("chunker:chunkify : calling update chunk reference")
-						self.db.update_chunk_ref(key)
-						blocks_already_present+=1
+					
+					if(chunkmap.has_key(key)):
+						value = chunkmap[key]
+						value.ref_count = str(int(value.ref_count) + 1)
 					else:
-						logging.info("chunker:chunkify : calling add chunk method")
-						self.db.add_chunk(key,chunk)
-						total_data_written+=sys.getsizeof(chunk)
-					chunklist.append(key)
-					#optimization to reduce footprint of the app
-					if len(chunklist) > 500:
-                                                logging.info("chunker:chunkify : calling add file entry method  to add %s chunk entries", len(chunklist))
-						self.db.add_file_entry(path, chunklist)
-						chunklist = []						
-					chunk = f.read(CHUNK_SIZE)
+						value.data = chunk
+						value.ref_count = "1"
+						chunkmap[key] = value
+					if (None == minhash) || (key < minhash) :
+						minhash = key
+					fullhash.update(key)	
 					logging.info("chunker:chunkify :: a chunk of size %s  and type %s was read", str(len(chunk)), type(chunk))
                     
-			logging.info("chunker:chunkify : calling add file entry method to add %s chunk entries",len(chunklist))
-			self.db.add_file_entry(path, chunklist)			
-			end_time = datetime.now()
-			total_time_taken = end_time - start_time
-			total_time_taken_in_min = (total_time_taken.total_seconds())/60
-			total_space_saved = ((file_size) - total_data_written)
-			logging.info("chunker:chunkify : successfully completed. It took %s minutes. Original Size of file : %s, New size of file : %s, Total space saved : %s bytes. Total block already present : %s ", total_time_taken_in_min,file_size, total_data_written, total_space_saved, blocks_already_present)	
-			        	
+			fullhash = fullhash.hexdigest()
+			
+			# checking whether file exists in db or not 
+			# already done
+			# 
+			self.db.add_file_entry(minhash, path)
+						        	
 		except Exception,e:
 			logging.error('chunker:chunkify failed with error : %s', str(e))
 			sys.exit(1)
+			
+			
+			
 
 	def _getmd5(self,chunk):
 		''' returns MD5 of the chunk '''
@@ -99,7 +103,7 @@ class chunker:
 		except Exception,e:
 			logging.error('chunker:_getmd5 : returned error %s',e)
 			return None
-		
+			
 
 	def _getchunk(self, fhandler, offset):
 		''' given a offset creats a chunk of the file and returns it back '''
