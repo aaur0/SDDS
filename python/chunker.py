@@ -101,7 +101,25 @@ class chunker:
 			sys.exit(1)
 			
 			
-			
+	def get_file(self, file_absolute_path):
+		if(self.db.is_file_exists(file_absolute_path) == False):
+			logging.error("chunker : get_file : file not found in database")
+			sys.exit(1)
+		minhash = self.db.get_minhash(file_absolute_path)
+		chunk_list = self.db.get_file_data(minhash, file_absolute_path)
+		f = open(file_absolute_path + ".retrieved" , 'w')
+		new_fullhash = md5.new()
+		for chunk in chunk_list:
+			f.write(chunk)
+			new_fullhash.update(chunk)
+		new_fullhash = new_fullhash.hexdigest()
+		if(self.db.is_fullhash_exists(minhash, new_fullhash) == False):
+			logging.error("chunker : get_file : wrong full hash ")
+			sys.exit(1)
+		print "file created @ " + f
+		f.close()
+	
+	
 
 	def _getmd5(self,chunk):
 		''' returns MD5 of the chunk '''
