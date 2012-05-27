@@ -7,7 +7,7 @@ from datetime import datetime
 
 
 LOG_FILE_NAME = 'vmdedup.log'
-CHUNK_SIZE = 4 * 1024 # 4 kb size
+CHUNK_SIZE = 4 * 1024 # 4 Kb size
 class chunker:
 	''' This class all the code required for the chunking service. This service will be responsible for splitting of file into chunks and store them in cassandra '''
 	def __init__(self):
@@ -37,32 +37,36 @@ class chunker:
 		'''		 	
 		logging.info("chunker:Chunkify: creating chunks for the file :%s",path)
 		try:
-			
+
 			if(not os.path.exists(path)):
 			  logging.error("chunkify: chunker : invalied file specified")
 			  sys.exit(1)
+			else:
+			  logging.debug("file exists")
+	
 			if(self.db.is_file_exists(path)):
 			  logging.error("chunkify: chunker :: an entry for file already exists in db")
 			  sys.exit(1)
-			
+			else:
+			  logging.debug("new file")				
 			chunkmap = {}	
 			filerecipe = []
 			minhash = None
 			fullhash = md5.new()
-			
+			key = ""
 			start_time = datetime.now()
 			file_size = os.path.getsize(path)
 			logging.info("chunker:chunkify :: file shredding initiated for filesize :: %s (bytes) at time: %s", file_size, start_time) 
 		        total_data_written = 0	
 			with open(path, 'rb') as f:
 				blocks_already_present = 0
-                                logging.info("chunker:chunkify :: a chunk of size %s  and type %s was read", str(len(chunk)), type(chunk))
 				while(True):
 					chunk = f.read(CHUNK_SIZE)
+                                	logging.info("chunker:chunkify :: a chunk of size %s  and type %s was read", str(len(chunk)), type(chunk))
+					
 					if("" == chunk):
 						break
 					key = self._getmd5(chunk)
-					
 					filerecipe.append(key)
 					
 					if(None == key):
@@ -71,12 +75,11 @@ class chunker:
 					
 					if(chunkmap.has_key(key)):
 						value = chunkmap[key]
-						value.ref_count = str(int(value.ref_count) + 1)
+						value["ref_count"] = str( int(value["ref_count"]) + 1)
 					else:
-						value.data = chunk
-						value.ref_count = "1"
+						value = {"data":chunk, "ref_count":"1"}
 						chunkmap[key] = value
-					if (None == minhash) || (key < minhash) :
+					if (None == minhash) or (key < minhash) :
 						minhash = key
 					fullhash.update(key)	
 					logging.info("chunker:chunkify :: a chunk of size %s  and type %s was read", str(len(chunk)), type(chunk))
@@ -93,6 +96,7 @@ class chunker:
 			self.db.insert_chunk_list(minhash, chunkmap)
 						        	
 		except Exception,e:
+			print e
 			logging.error('chunker:chunkify failed with error : %s', str(e))
 			sys.exit(1)
 			
