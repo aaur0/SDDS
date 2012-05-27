@@ -66,7 +66,7 @@ class dblayer:
 		  		
                 '''
 		logging.info("dblayer:addchunk : enter with param key as %s", str(key))
-		colfamily = self.minhash_chunk_cf
+		colfamily = self.minhash_chunks_cf
 		row = minhash
 		colname = chunk_hash
 		colval = chunk_data
@@ -76,42 +76,29 @@ class dblayer:
 		except Exception, e:
 			logging.error("exiting dblayer:addchunk with error %s ", str(e))
 		
-	def add_fullhash(self, min_hash, full_hash):
+	def add_fullhash(self, minhash, fullhash):
 		''' method to add full hash entry in the fullhash col fam'''
-		logging.info("dblayer:add_full_hash : min_hash : %s , fullhash : %s", min_hash, full_hash)
+		logging.info("dblayer:add_full_hash : min_hash : %s , fullhash : %s", minhash, fullhash)
 		colfamily = self.minhash_fullhash_cf
 		try:
-			colfamily.insert(minhash, {full_hash:"-"})
-			logging.info("dblayer:add_full_hash : Full_hash %s created for Min_Hash %s ", full_hash, min_hash)
+			colfamily.insert(minhash, {fullhash:"-"})
+			logging.info("dblayer:add_full_hash : Full_hash %s created for Min_Hash %s ", fullhash, minhash)
 		except Exception, e:
 			logging.info("dblayer:add_full_hash failed with error : %s", e)
 			raise e
 	
 	def add_file_recipe(self, minhash, file_identifier, chunk_hash_list): 
         	colfamily = self.minhash_filerecipe_cf
-        	dict = {}
-        	for number, chunk_hash in enumerate(chunk_hash_list)
-        		dict[number] = chunk_hash
-        	colfamily.insert(minhash, {file_identifier: dict})
+        	dict1 = {}
+        	for number, chunk_hash in enumerate(chunk_hash_list):
+        		dict1[str(number)] = chunk_hash
+        	colfamily.insert(minhash, {file_identifier: dict1})
         
-	
-	def add_file_entry(self, file_identifier, minhash):
-		''' method to add an entry to files columnfamily '''
-		logging.info("dblayer:addfileentry  : entered with filename as %s" , file_identifier)
-		colfamily = self.files_minhash_cf
-	        try:
-			colfamily.insert(file_identifier, minhash)
-			logging.info("dblayer:addfileentry : entry for fileid - minhash created ")
-		except Exception,e:
-			logging.error("dblayer:addfileentry has errors %s ",str(e))
-			sys.exit(1)	
-
-
 	def chunk_exists(self, minhash, chunk_hash):
 		''' chekcs if key exisits in the Chunk keyspace and returns true/false '''
 		logging.info("inside dblayer:chunkexists to check chunk %s", str(key))
 		try:
-		    colfamily = self.minhash_chunk_cf
+		    colfamily = self.minhash_chunks_cf
 		    chunk_list = colfamily.get(minhash)
 		    val = chunk_list.has_key(chunk_hash)
 		    return (None != val)
@@ -121,9 +108,11 @@ class dblayer:
 	def add_minhash(self, filename, minhash):
 		''' method to add filename and minhash in files_minhash_cf '''
 		logging.info("inside dblayer::add_min_hash method with filename = %s, minhash = %s", filename, minhash)
-		colfamily = self.files_minhash_cf
+		colfamily =  self.files_minhash_cf
+		logging.debug("colfamily: " + str(colfamily))
+		dict1 = {minhash:"-"}
 		try:
-			colfamily.insert(filename, minhash)
+			colfamily.insert(filename, dict1)
 		except Exception, e:
 			logging.error("dblayer: add_min_hash raised an error : %s", e)
 			raise e
@@ -139,7 +128,7 @@ class dblayer:
 	
 	def is_file_exists(self, file_id):
 		''' checks if an entry for file alread exists in DB '''
-		logging.info("inside dblayer:file_exists method	with filename = %s", key)	
+		logging.info("inside dblayer:file_exists method	with filename = %s", file_id)	
 		try:
                     colfamily = self.files_minhash_cf
                     file = colfamily.get(file_id)
@@ -151,27 +140,27 @@ class dblayer:
 
 
 	def get_chunk_list(self, minhash):
-		colfamily = self.minhash_chunk_cf
+		colfamily = self.minhash_chunks_cf
 	        chunk_list = colfamily.get(minhash)
 	        return chunk_list
 	
 	
 	def insert_chunk_list(self, minhash, chunk_map):
-		colfamily = self.minhash_chunk_cf
+		colfamily = self.minhash_chunks_cf
 		db_chunk_map = colfamily.get(minhash)
 		for chunk_hash in chunk_map.keys():
 			if db_chunk_map.has_key( chunk_hash ):
                                 value = chunk_map.get(chunk_hash)		
-				db_chunk_map[chunk_hash]['ref'] = str(int(db_chunk_map[chunk_hash]['ref']) + value.ref_count)
+				db_chunk_map[chunk_hash]['ref'] = str(int(db_chunk_map[chunk_hash]['ref']) + value["ref_count"])
 			else:
-				db_chunk_map[chunk_hash]['data']= value.data
-				db_chunk_map[chunk_hash]['ref'] = value.ref_count
+				db_chunk_map[chunk_hash]['data'] = value["data"]
+				db_chunk_map[chunk_hash]['ref'] = value["ref_count"] 
 		colfamily.insert(minhash, db_chunk_map)
 	        #	update_chunk_ref(this, minhash, chunk_hash,db_chunk_map,1)
 		
 	        
 	def delete_chunk_list(self, minhash, chunk_map):
-		colfamily = self.minhash_chunk_cf
+		colfamily = self.minhash_chunks_cf
 		db_chunk_map = colfamily.get(minhash)
 		for chunk_hash in chunk_map.keys():
 			if db_chunk_map.has_key( chunk_hash ):
