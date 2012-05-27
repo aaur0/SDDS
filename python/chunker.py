@@ -46,6 +46,7 @@ class chunker:
 			  sys.exit(1)
 			
 			chunkmap = {}	
+			filerecipe = []
 			minhash = None
 			fullhash = md5.new()
 			
@@ -61,6 +62,8 @@ class chunker:
 					if("" == chunk):
 						break
 					key = self._getmd5(chunk)
+					
+					filerecipe.append(key)
 					
 					if(None == key):
 						 logging.error('chunker:chunkify failed with error : md5  hash was returned as None')
@@ -83,7 +86,11 @@ class chunker:
 			# checking whether file exists in db or not 
 			# already done
 			# 
-			self.db.add_file_entry(minhash, path)
+			logging.info("file chunking done ")
+			self.db.add_minhash(path, minhash)
+			self.db.add_file_recipe(minhash, path, filerecipe)
+			self.db.add_fullhash(minhash, fullhash)
+			self.db.insert_chunk_list(minhash, chunkmap)
 						        	
 		except Exception,e:
 			logging.error('chunker:chunkify failed with error : %s', str(e))
