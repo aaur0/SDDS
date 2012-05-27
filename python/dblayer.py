@@ -95,18 +95,13 @@ class dblayer:
         	colfamily.insert(minhash, {file_identifier: dict})
         
 	
-	def add_file_entry(self, filename, chunklist):
+	def add_file_entry(self, file_identifier, minhash):
 		''' method to add an entry to files columnfamily '''
-		logging.info("dblayer:addfileentry  : entered with filename as %s" , filename)
-		colfamily = self.minhash_files_cf
-		chunknumbers = range(0, len(chunklist))
-		chunkstr = list(map(str,chunknumbers))
-		# numbers are strings here ! 
-		entries =  dict(zip(chunkstr, chunklist))
-		logging.info("totalchunks = %s and totalchunklist = %s and entries = %s", len(chunkstr), len(chunklist), len(entries))
+		logging.info("dblayer:addfileentry  : entered with filename as %s" , file_identifier)
+		colfamily = self.files_minhash_cf
 	        try:
-			colfamily.insert(filename, entries)
-			logging.info("dblayer:addfileentry : entry for file %s created ", filename)
+			colfamily.insert(file_identifier, minhash)
+			logging.info("dblayer:addfileentry : entry for fileid - minhash created ")
 		except Exception,e:
 			logging.error("dblayer:addfileentry has errors %s ",str(e))
 			sys.exit(1)	
