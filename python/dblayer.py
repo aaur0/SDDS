@@ -216,9 +216,9 @@ class dblayer:
 		filerecipe = self.minhash_filerecipe
 		chunk_id_map = filerecipe.get(file_id)
 		chunk_data_list = []
-		# Also, get the minhash column family to get the chunk data
-		minhash_cf = self.minhash_chunks
+		# Also, get the row (that has all the chunk data) corresponding to the minhash value in the minhash column family
+		minhash_row = self.minhash_chunks.get(minhash)
 		# Then, for each of the chunk ids, get the chunk data and append it to the chunk_data_list.
 		for key in chunk_id_map.keys():
-			chunk_data_list.append(minhash_cf.get(minhash)[key]['data'])
+			chunk_data_list.append(minhash_row[key]['data'])
 		return chunk_data_list
