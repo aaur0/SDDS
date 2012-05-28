@@ -100,7 +100,7 @@ class chunker:
 			logging.info("chunk list size %s", len(chunkmap))
 			#logging.debug("first chunk while inserting %s", chunkmap.values()[0]["data"])
 			
-			self.db.add_minhash(path, minhash)
+			self.db.add_minhash(path, file_size, minhash)
 			self.db.add_file_recipe(minhash, path, filerecipe)
 			self.db.add_fullhash(minhash, fullhash)
 			self.db.insert_chunk_list(minhash, chunkmap)
@@ -147,12 +147,16 @@ class chunker:
 			return None
 			
 	def get_saved_space(self):
-		db_chunks_count = self.db.get_chunks_count()
-		files_saved_size = db_chunks_count * CHUNK_SIZE
-		input_chunks_count = get_files_chunk_count()
-		total_input_size = input_chunks_count * CHUNK_SIZE
-		saved_space = total_input_size - files_saved_size
-		print "Saved Space : %s KB", saved_space
+		''' gets saved space '''
+		try:
+			db_chunks_count = self.db.get_chunks_count()
+			files_saved_size = db_chunks_count * CHUNK_SIZE 
+			total_input_size = self.db.get_total_input_size()
+			saved_space = total_input_size - files_saved_size
+			print "Saved Space : %s Bytes", saved_space
+		except Exception, e:
+			logging.error('error in the get_saved_space %s ', e)
+			return None
 		
 	def _getchunk(self, fhandler, offset):
 		''' given a offset creats a chunk of the file and returns it back '''
