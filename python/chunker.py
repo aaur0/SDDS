@@ -7,7 +7,7 @@ from datetime import datetime
 
 
 LOG_FILE_NAME = 'vmdedup.log'
-CHUNK_SIZE = 4 * 1024 # 4 Kb size
+CHUNK_SIZE = 4 * 1024 # 4 kb size
 class chunker:
 	''' This class all the code required for the chunking service. This service will be responsible for splitting of file into chunks and store them in cassandra '''
 	def __init__(self):
@@ -58,11 +58,18 @@ class chunker:
 			file_size = os.path.getsize(path)
 			logging.info("chunker:chunkify :: file shredding initiated for filesize :: %s (bytes) at time: %s", file_size, start_time) 
 		        total_data_written = 0	
+			count = 0
 			with open(path, 'rb') as f:
+				wholehash = self._getmd5(f.read())
+				logging.debug("Whole hash of the file %s", wholehash)	
 				blocks_already_present = 0
+				f.seek(0)
 				while(True):
 					chunk = f.read(CHUNK_SIZE)
-                                	logging.info("chunker:chunkify :: a chunk of size %s  and type %s was read", str(len(chunk)), type(chunk))
+                                	if count == 0:
+						logging.debug("First chunk before inserting %s", chunk)
+					count += 1
+					#logging.info("chunker:chunkify :: a chunk of size %s  and type %s was read", str(len(chunk)), type(chunk))
 					
 					if("" == chunk):
 						break
@@ -82,7 +89,7 @@ class chunker:
 					if (None == minhash) or (key < minhash) :
 						minhash = key
 					fullhash.update(key)	
-					logging.info("chunker:chunkify :: a chunk of size %s  and type %s was read", str(len(chunk)), type(chunk))
+					#logging.info("chunker:chunkify :: a chunk of size %s  and type %s was read", str(len(chunk)), type(chunk))
                     
 			fullhash = fullhash.hexdigest()
 			
@@ -90,6 +97,9 @@ class chunker:
 			# already done
 			# 
 			logging.info("file chunking done ")
+			logging.info("chunk list size %s", len(chunkmap))
+			#logging.debug("first chunk while inserting %s", chunkmap.values()[0]["data"])
+			
 			self.db.add_minhash(path, minhash)
 			self.db.add_file_recipe(minhash, path, filerecipe)
 			self.db.add_fullhash(minhash, fullhash)
@@ -99,35 +109,38 @@ class chunker:
 			print e
 			logging.error('chunker:chunkify failed with error : %s', str(e))
 			sys.exit(1)
-			
-			
+	
 	def get_file(self, file_absolute_path):
 		if(self.db.is_file_exists(file_absolute_path) == False):
 			logging.error("chunker : get_file : file not found in database")
 			sys.exit(1)
 		minhash = self.db.get_minhash(file_absolute_path)
 		chunk_list = self.db.get_file_data(minhash, file_absolute_path)
-		f = open(file_absolute_path + ".retrieved" , 'w')
+		logging.debug("chunk_list size %s", len(chunk_list))
+		f = open(file_absolute_path + "1", 'wb')
 		new_fullhash = md5.new()
+		logging.debug("first chunk %s", chunk_list[0])
 		for chunk in chunk_list:
 			f.write(chunk)
 			new_fullhash.update(chunk)
 		new_fullhash = new_fullhash.hexdigest()
 		if(self.db.is_fullhash_exists(minhash, new_fullhash) == False):
 			logging.error("chunker : get_file : wrong full hash ")
-			sys.exit(1)
-		print "file created @ " + f
+			#sys.exit(1)
+		logging.debug("file created %s", f)
+		f.close()			
+		f = open(file_absolute_path + "1", 'r')
+		wholehash = self._getmd5(f.read())
+		logging.debug("whole hash after file creation %s", wholehash)
 		f.close()
 	
-	
-
 	def _getmd5(self,chunk):
 		''' returns MD5 of the chunk '''
 		try:
-			logging.info("chunker:_getmd5 method invoked")
+			#logging.info("chunker:_getmd5 method invoked")
 			hasher = md5.new()
 			hasher.update(chunk)
-			logging.info("chunker:_getmd5 successful")
+			#logging.info("chunker:_getmd5 successful")
 			return hasher.hexdigest()
 		except Exception,e:
 			logging.error('chunker:_getmd5 : returned error %s',e)
@@ -145,4 +158,5 @@ if __name__ == '__main__':
 	else:
 		chunkerobj = chunker()
 		chunkerobj.chunkify(sys.argv[1])
+		#chunkerobj.get_file(sys.argv[1])
 		
