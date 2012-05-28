@@ -76,17 +76,6 @@ class dblayer:
 			logging.info("dblayer:addchunk: Chunk successfully added " )
 		except Exception, e:
 			logging.error("exiting dblayer:addchunk with error %s ", str(e))
-			
-	def get_chunks_count(self):
-		''' method to measure the efficiency of the system by calculating total disk space saved'''
-		logging.info("dblayer:calculate_space_saved)
-		colfamily = self.minhash_chunks_cf	
-		minhash_list = list(colfamily.get_range().get_keys())
-		total_chunks = 0
-		for minhash in minhash_list:
-			total_chunks += colfamily.get_count(minhash)
-		return total_chunks
-
 		
 	def add_fullhash(self, minhash, fullhash):
 		''' method to add full hash entry in the fullhash col fam'''
@@ -134,16 +123,15 @@ class dblayer:
 		''' method to add filename and minhash in files_minhash_cf '''
 		logging.info("inside dblayer::add_min_hash method with filename = %s, minhash = %s", filename, minhash)
 		colfamily =  self.files_minhash_cf
-		logging.debug("colfamily: " + str(colfamily))
 		dict1 = {}
 		dict1["minhash"] = minhash
-		dict1["filesize"] = filesize 
+		dict1["filesize"] = str(filesize) 
 		try:
 			colfamily.insert(filename, dict1)
 		except Exception, e:
 			logging.error("dblayer: add_min_hash raised an error : %s", e)
 			raise e
-			
+	
 	def get_minhash(self, file_id):
 		colfamily = self.files_minhash_cf
 		try:
@@ -151,7 +139,7 @@ class dblayer:
 			return colfamily.get(file_id)["minhash"]
 		except Exception, e:
 			logging.error("dblayer: get_minhash raised an error : %s", e)
-			raise e
+			raise e	
 		
 	
 	def is_file_exists(self, file_id):
@@ -166,19 +154,7 @@ class dblayer:
                 except Exception,e:
                    return None
 
-	def get_total_input_size():
-		''' method to measure the input size '''
-		logging.info("dblayer: gets total size of the input")
-		try:
-			colfamily = self.files_minhash_cf
-                        files_list = list(colfamily.get_range().get_keys())
-			total_input_size = 0
-			for file in files_list:
-				total_input_size += colfamily.get(file)["filesize"]
-			return total_input_size
-		except Exception, e:
-			return None
-        
+
 	def get_chunk_list(self, minhash):
 		colfamily = self.minhash_chunks_cf
 	        chunk_list = colfamily.get(minhash)
@@ -188,12 +164,9 @@ class dblayer:
 	def insert_chunk_list(self, minhash, chunk_map):
 		try:	
 			logging.debug("dblayer: insert_chunk_list")
-			logging.debug("minhash %s", minhash)	
 			colfamily = self.minhash_chunks_cf
-			logging.debug("column family %s:", colfamily)
 			try:
 				db_chunk_map = colfamily.get(minhash)
-				logging.debug("db_chunk_map %s", len(db_chunk_map))
 				for chunk_hash in chunk_map.keys():
 					if db_chunk_map.has_key( chunk_hash ):
                 	                	value = chunk_map.get(chunk_hash)		
@@ -242,9 +215,13 @@ class dblayer:
 		    It's determined by comparing the wholehash.
 	    	'''
 	    	logging.info("dblayer: is_fullhash_exists")
-		logging.info('fullhash %s', fullhash)
 	    	colfamily = self.minhash_fullhash_cf
-	    	return colfamily.get(minhash).has_key(fullhash)
+	
+		try:
+	    		return colfamily.get(minhash).has_key(fullhash)
+		except NotFoundException, e:
+			logging.debug("new minhash")
+			return False
 	
 	
 	def get_file_data(self, minhash, file_id):
@@ -253,7 +230,6 @@ class dblayer:
 		logging.info("dblayer: get_file_data")
 		try:
 			filerecipe = self.minhash_filerecipe_cf
-			logging.debug("file_id %s", file_id) 
 			db_chunk_map = filerecipe.get(minhash)[file_id]
 			db_chunk_id_keys = range(0, len(db_chunk_map))
 			
@@ -262,16 +238,16 @@ class dblayer:
 			chunk_data_list = []
 			# Also, get the row (that has all the chunk data) corresponding to the minhash value in the minhash column family
 			chunks_cf = self.minhash_chunks_cf 
-			numCols = chunks_cf.get_count(minhash) 
-			logging.debug("Number of columns in chunks_cf %s", numCols)
-			minhash_row = chunks_cf.get(minhash, column_count=numCols)
+			num_cols = chunks_cf.get_count(minhash) 
+			logging.debug("Number of columns in chunks_cf %s", num_cols)
+			minhash_row = chunks_cf.get(minhash, column_count=num_cols)
 			#logging.debug('minhash_row: %s', minhash_row)
 			# Then, for each of the chunk ids, get the chunk data and append it to the chunk_data_list.
-			logging.debug("db_chunk_map.values() %s", db_chunk_map.values())
-			logging.debug("minhash_row.keys() %s", minhash_row.keys())
+			#logging.debug("db_chunk_map.values() %s", db_chunk_map.values())
+			#logging.debug("minhash_row.keys() %s", minhash_row.keys())
 			  
 			for key in db_chunk_id_keys:
-				logging.debug("key %s", key)
+				#logging.debug("key %s", key)
 				chunk_id = db_chunk_map[str(key)]
 			        #logging.debug("minhash_row[key] %s", minhash_row[key]['data'])
 				chunk_data_list.append(minhash_row[chunk_id]['data'])
@@ -280,3 +256,41 @@ class dblayer:
 		except Exception, e:
 			logging.error("Exception %s", str(e))
 			return None
+
+	def get_chunks_count(self):
+		''' method to measure the efficiency of the system by calculating total disk space saved'''
+		logging.info("dblayer: get_chunks_count")
+		try:
+			colfamily = self.minhash_chunks_cf	
+			#logging.debug("colfamily.get_range() %s", colfamily.get_range())
+			minhash_list = tuple(colfamily.get_range())
+			#dir(minhash_list)	
+			#logging.debug("testing %s", minhash_list[0][0])
+			total_chunks = 0
+			for row in minhash_list:
+				#logging.debug("item %s", item[0])
+				minhash = row[0]
+				total_chunks += colfamily.get_count(minhash) 	
+				#logging.debug("number of columns %s", colfamily.get_count(item[0]))
+			#for minhash in minhash_list:
+			#	total_chunks += colfamily.get_count(minhash)
+			return total_chunks
+		except Exception, e:
+			logging.error("Exception %s", e)
+			return 0
+
+	def get_total_input_size(self):
+		''' method to measure the input size '''
+		logging.info("dblayer: get_total_input_size")
+		try:
+			colfamily = self.files_minhash_cf
+                        files_list = tuple(colfamily.get_range())
+			total_input_size = 0
+			for row in files_list:
+				file_id = row[0]
+				total_input_size += int(colfamily.get(file_id)["filesize"])
+			logging.debug("total_input_size %s", total_input_size)
+			return total_input_size
+		except Exception, e:
+			logging.debug("Exception %s", e)
+			return 0
