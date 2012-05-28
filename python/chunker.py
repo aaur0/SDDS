@@ -146,7 +146,14 @@ class chunker:
 			logging.error('chunker:_getmd5 : returned error %s',e)
 			return None
 			
-
+	def get_saved_space(self):
+		db_chunks_count = self.db.get_chunks_count()
+		files_saved_size = db_chunks_count * CHUNK_SIZE
+		input_chunks_count = get_files_chunk_count()
+		total_input_size = input_chunks_count * CHUNK_SIZE
+		saved_space = total_input_size - files_saved_size
+		print "Saved Space : %s KB", saved_space
+		
 	def _getchunk(self, fhandler, offset):
 		''' given a offset creats a chunk of the file and returns it back '''
 		pass
