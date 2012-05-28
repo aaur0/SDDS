@@ -76,6 +76,17 @@ class dblayer:
 			logging.info("dblayer:addchunk: Chunk successfully added " )
 		except Exception, e:
 			logging.error("exiting dblayer:addchunk with error %s ", str(e))
+			
+	def get_chunks_count(self):
+	''' method to measure the efficiency of the system by calculating total disk space saved'''
+	logging.info("dblayer:calculate_space_saved)
+	colfamily = self.minhash_chunks_cf	
+	minhash_list = list(colfamily.get_range().get_keys())
+	total_chunks = 0
+	for minhash in minhash_list:
+		total_chunks += colfamily.get_count(minhash)
+	return total_chunks
+
 		
 	def add_fullhash(self, minhash, fullhash):
 		''' method to add full hash entry in the fullhash col fam'''
