@@ -6,12 +6,21 @@
 # For more inforamtion visit
 # http://pycassa.github.com/pycassa/installation.html
 
-# create keyspace and column families
+#create keyspace minhash;
+#use minhash;
+#create column family chunks; # list of merged chunk ids and their data
+#create column family filerecipe; # list of file names and their chunk ids
+#create column family fullhash; # list of full hashes
+
+#create keyspace files; 
+#use files;
+#create column family minhash; # one to one mapping of files and its minhash
 
 import logging,sys
 from pycassa.system_manager import *
 from pycassa.pool import ConnectionPool
 from pycassa import ColumnFamily
+from pycassa import NotFoundException
 LOGFILENAME = 'dblayer.log'
 HOST = 'localhost'
 PORT = '9160'
@@ -86,6 +95,19 @@ class dblayer:
         		dict1[str(number)] = chunk_hash
         	colfamily.insert(minhash, {file_identifier: dict1})
         
+	
+	def add_file_entry(self, file_identifier, minhash):
+		''' method to add an entry to files columnfamily '''
+		logging.info("dblayer:addfileentry  : entered with filename as %s" , file_identifier)
+		colfamily = self.files_minhash_cf
+	        try:
+			colfamily.insert(file_identifier, minhash)
+			logging.info("dblayer:addfileentry : entry for fileid - minhash created ")
+		except Exception,e:
+			logging.error("dblayer:addfileentry has errors %s ",str(e))
+			sys.exit(1)	
+
+
 	def chunk_exists(self, minhash, chunk_hash):
 		''' chekcs if key exisits in the Chunk keyspace and returns true/false '''
 		logging.info("inside dblayer:chunkexists to check chunk %s", str(key))
@@ -112,7 +134,8 @@ class dblayer:
 	def get_minhash(self, file_id):
 		colfamily = self.files_minhash_cf
 		try:
-			return colfamily.get(filename)
+			logging.debug("colfamily.get(file_id) %s", colfamily.get(file_id)) 
+			return colfamily.get(file_id).keys()[0]
 		except Exception, e:
 			logging.error("dblayer: get_minhash raised an error : %s", e)
 			raise e
@@ -138,18 +161,29 @@ class dblayer:
 	
 	
 	def insert_chunk_list(self, minhash, chunk_map):
-		colfamily = self.minhash_chunks_cf
-		db_chunk_map = colfamily.get(minhash)
-		for chunk_hash in chunk_map.keys():
-			if db_chunk_map.has_key( chunk_hash ):
-                                value = chunk_map.get(chunk_hash)		
-				db_chunk_map[chunk_hash]['ref'] = str(int(db_chunk_map[chunk_hash]['ref']) + value["ref_count"])
-			else:
-				db_chunk_map[chunk_hash]['data'] = value["data"]
-				db_chunk_map[chunk_hash]['ref'] = value["ref_count"] 
-		colfamily.insert(minhash, db_chunk_map)
+		try:	
+			logging.debug("dblayer: insert_chunk_list")
+			logging.debug("minhash %s", minhash)	
+			colfamily = self.minhash_chunks_cf
+			logging.debug("column family %s:", colfamily)
+			try:
+				db_chunk_map = colfamily.get(minhash)
+				logging.debug("db_chunk_map %s", len(db_chunk_map))
+				for chunk_hash in chunk_map.keys():
+					if db_chunk_map.has_key( chunk_hash ):
+                	                	value = chunk_map.get(chunk_hash)		
+						db_chunk_map[chunk_hash]['ref'] = str(int(db_chunk_map[chunk_hash]['ref']) + value["ref_count"])
+					else:
+						db_chunk_map[chunk_hash]['data'] = value["data"]
+						db_chunk_map[chunk_hash]['ref'] = value["ref_count"] 
+			except NotFoundException, e:
+				db_chunk_map = chunk_map
+			colfamily.insert(minhash, db_chunk_map)
+			logging.debug("chunk_map successfully added")
 	        #	update_chunk_ref(this, minhash, chunk_hash,db_chunk_map,1)
-		
+		except Exception, e:
+			logging.error('Error in dblayer:insert_chunk_list : %s', e)
+			raise e
 	        
 	def delete_chunk_list(self, minhash, chunk_map):
 		colfamily = self.minhash_chunks_cf
@@ -182,7 +216,8 @@ class dblayer:
 		''' method to check if there's already an exact copy of the file. 	
 		    It's determined by comparing the wholehash.
 	    	'''
-	    	logger.info("dblayer: is_fullhash_exists")
+	    	logging.info("dblayer: is_fullhash_exists")
+		logging.info('fullhash %s', fullhash)
 	    	colfamily = self.minhash_fullhash_cf
 	    	return colfamily.get(minhash).has_key(fullhash)
 	
@@ -190,13 +225,33 @@ class dblayer:
 	def get_file_data(self, minhash, file_id):
 		''' method to re-assemble the chunks from the metadata associated with the given file. '''
 		# First, get the chunk ids (hashes) from the filerecipe column family.
-		logger.info("dblayer: get_file_data")
-		filerecipe = self.minhash_filerecipe
-		chunk_id_map = filerecipe.get(file_id)
-		chunk_data_list = []
-		# Also, get the row (that has all the chunk data) corresponding to the minhash value in the minhash column family
-		minhash_row = self.minhash_chunks.get(minhash)
-		# Then, for each of the chunk ids, get the chunk data and append it to the chunk_data_list.
-		for key in chunk_id_map.keys():
-			chunk_data_list.append(minhash_row[key]['data'])
-		return chunk_data_list
+		logging.info("dblayer: get_file_data")
+		try:
+			filerecipe = self.minhash_filerecipe_cf
+			logging.debug("file_id %s", file_id) 
+			db_chunk_map = filerecipe.get(minhash)[file_id]
+			db_chunk_id_keys = range(0, len(db_chunk_map))
+			
+			
+			#logging.debug('chunk_id_map: %s', chunk_id_map)
+			chunk_data_list = []
+			# Also, get the row (that has all the chunk data) corresponding to the minhash value in the minhash column family
+			chunks_cf = self.minhash_chunks_cf 
+			numCols = chunks_cf.get_count(minhash) 
+			logging.debug("Number of columns in chunks_cf %s", numCols)
+			minhash_row = chunks_cf.get(minhash, column_count=numCols)
+			#logging.debug('minhash_row: %s', minhash_row)
+			# Then, for each of the chunk ids, get the chunk data and append it to the chunk_data_list.
+			logging.debug("db_chunk_map.values() %s", db_chunk_map.values())
+			logging.debug("minhash_row.keys() %s", minhash_row.keys())
+			  
+			for key in db_chunk_id_keys:
+				logging.debug("key %s", key)
+				chunk_id = db_chunk_map[str(key)]
+			        #logging.debug("minhash_row[key] %s", minhash_row[key]['data'])
+				chunk_data_list.append(minhash_row[chunk_id]['data'])
+			logging.debug("chunk_data_list obtained")
+			return chunk_data_list
+		except Exception, e:
+			logging.error("Exception %s", str(e))
+			return None
