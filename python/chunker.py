@@ -58,17 +58,10 @@ class chunker:
 			file_size = os.path.getsize(path)
 			logging.info("chunker:chunkify :: file shredding initiated for filesize :: %s (bytes) at time: %s", file_size, start_time) 
 		        total_data_written = 0	
-			count = 0
 			with open(path, 'rb') as f:
-				wholehash = self._getmd5(f.read())
-				logging.debug("Whole hash of the file %s", wholehash)	
 				blocks_already_present = 0
-				f.seek(0)
 				while(True):
 					chunk = f.read(CHUNK_SIZE)
-                                	if count == 0:
-						logging.debug("First chunk before inserting %s", chunk)
-					count += 1
 					#logging.info("chunker:chunkify :: a chunk of size %s  and type %s was read", str(len(chunk)), type(chunk))
 					
 					if("" == chunk):
@@ -88,7 +81,7 @@ class chunker:
 						chunkmap[key] = value
 					if (None == minhash) or (key < minhash) :
 						minhash = key
-					fullhash.update(key)	
+					fullhash.update(chunk)	
 					#logging.info("chunker:chunkify :: a chunk of size %s  and type %s was read", str(len(chunk)), type(chunk))
                     
 			fullhash = fullhash.hexdigest()
@@ -100,6 +93,11 @@ class chunker:
 			logging.info("chunk list size %s", len(chunkmap))
 			#logging.debug("first chunk while inserting %s", chunkmap.values()[0]["data"])
 			
+			if self.db.is_fullhash_exists(minhash, fullhash):
+				logging.debug("there is an exact duplicate of the file")
+				self.db.add_minhash(path, file_size, minhash)
+				return
+				
 			self.db.add_minhash(path, file_size, minhash)
 			self.db.add_file_recipe(minhash, path, filerecipe)
 			self.db.add_fullhash(minhash, fullhash)
@@ -119,19 +117,19 @@ class chunker:
 		logging.debug("chunk_list size %s", len(chunk_list))
 		f = open(file_absolute_path + "1", 'wb')
 		new_fullhash = md5.new()
-		logging.debug("first chunk %s", chunk_list[0])
+		#logging.debug("first chunk %s", chunk_list[0])
 		for chunk in chunk_list:
 			f.write(chunk)
 			new_fullhash.update(chunk)
 		new_fullhash = new_fullhash.hexdigest()
+		logging.debug("fullhash after stitching the file %s", new_fullhash)
 		if(self.db.is_fullhash_exists(minhash, new_fullhash) == False):
 			logging.error("chunker : get_file : wrong full hash ")
 			#sys.exit(1)
-		logging.debug("file created %s", f)
+		logging.debug("file created successfully!")
 		f.close()			
 		f = open(file_absolute_path + "1", 'r')
 		wholehash = self._getmd5(f.read())
-		logging.debug("whole hash after file creation %s", wholehash)
 		f.close()
 	
 	def _getmd5(self,chunk):
@@ -146,6 +144,7 @@ class chunker:
 			logging.error('chunker:_getmd5 : returned error %s',e)
 			return None
 			
+	
 	def get_saved_space(self):
 		''' gets saved space '''
 		try:
@@ -153,11 +152,12 @@ class chunker:
 			files_saved_size = db_chunks_count * CHUNK_SIZE 
 			total_input_size = self.db.get_total_input_size()
 			saved_space = total_input_size - files_saved_size
-			print "Saved Space : %s Bytes", saved_space
+			logging.debug("Saved Space : %s Bytes", saved_space)
 		except Exception, e:
 			logging.error('error in the get_saved_space %s ', e)
 			return None
-		
+
+
 	def _getchunk(self, fhandler, offset):
 		''' given a offset creats a chunk of the file and returns it back '''
 		pass
@@ -170,4 +170,4 @@ if __name__ == '__main__':
 		chunkerobj = chunker()
 		chunkerobj.chunkify(sys.argv[1])
 		#chunkerobj.get_file(sys.argv[1])
-		
+		chunkerobj.get_saved_space()	
