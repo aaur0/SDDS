@@ -130,12 +130,14 @@ class dblayer:
 		except Exception,e:
 		   return False
 	
-	def add_minhash(self, filename, minhash):
+	def add_minhash(self, filename, filesize, minhash):
 		''' method to add filename and minhash in files_minhash_cf '''
 		logging.info("inside dblayer::add_min_hash method with filename = %s, minhash = %s", filename, minhash)
 		colfamily =  self.files_minhash_cf
 		logging.debug("colfamily: " + str(colfamily))
-		dict1 = {minhash:"-"}
+		dict1 = {}
+		dict1["minhash"] = minhash
+		dict1["filesize"] = filesize 
 		try:
 			colfamily.insert(filename, dict1)
 		except Exception, e:
@@ -146,7 +148,7 @@ class dblayer:
 		colfamily = self.files_minhash_cf
 		try:
 			logging.debug("colfamily.get(file_id) %s", colfamily.get(file_id)) 
-			return colfamily.get(file_id).keys()[0]
+			return colfamily.get(file_id)["minhash"]
 		except Exception, e:
 			logging.error("dblayer: get_minhash raised an error : %s", e)
 			raise e
@@ -164,7 +166,19 @@ class dblayer:
                 except Exception,e:
                    return None
 
-
+	def get_total_input_size():
+		''' method to measure the input size '''
+		logging.info("dblayer: gets total size of the input")
+		try:
+			colfamily = self.files_minhash_cf
+                        files_list = list(colfamily.get_range().get_keys())
+			total_input_size = 0
+			for file in files_list:
+				total_input_size += colfamily.get(file)["filesize"]
+			return total_input_size
+		except Exception, e:
+			return None
+        
 	def get_chunk_list(self, minhash):
 		colfamily = self.minhash_chunks_cf
 	        chunk_list = colfamily.get(minhash)
