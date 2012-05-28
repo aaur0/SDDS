@@ -1,5 +1,10 @@
 connect localhost/9160;
 
+#######################################################
+# 1. have to set replication factor for Column families
+# 2. check for other tuning parameter
+#######################################################
+
 create keyspace minhash;
 use minhash;
 create column family minhash_chunks with column_type=Super; # list of merged chunk ids and their data
