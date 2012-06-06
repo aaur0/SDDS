@@ -21,7 +21,7 @@ from pycassa.system_manager import *
 from pycassa.pool import ConnectionPool
 from pycassa import ColumnFamily
 from pycassa import NotFoundException
-import sdds_constants
+from sdds_constants import *
 
 class dblayer:
 	def __init__(self):

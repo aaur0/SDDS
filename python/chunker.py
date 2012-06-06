@@ -1,11 +1,12 @@
 #! /usr/bin/exec python
 
 import logging
-import md5,sys,os
+import hashlib
+import sys,os
 import time
 from dblayer import *
 from datetime import datetime
-import sdds_constants
+from sdds_constants import *
 
 #LOG_FILE_NAME = 'vmdedup.log'
 #CHUNK_SIZE = 4 * 1024 # 4 kb size
@@ -54,7 +55,7 @@ class chunker:
 			chunkmap = {}	
 			filerecipe = []
 			minhash = None
-			fullhash = md5.new()
+			fullhash = hashlib.md5()
 			key = ""
 			file_size = os.path.getsize(path)
 			logging.info("chunker:chunkify :: file shredding initiated for filesize :: %s (bytes) at time: %s", file_size, datetime.now()) 
@@ -120,7 +121,7 @@ class chunker:
 		chunk_list = self.db.get_file_data(minhash, file_absolute_path)
 		logging.debug("%s chunk_list size %s", file_absolute_path, len(chunk_list))
 		f = open(file_absolute_path + "1", 'wb')
-		new_fullhash = md5.new()
+		new_fullhash = hashlib.md5()
 		#logging.debug("first chunk %s", chunk_list[0])
 		for chunk in chunk_list:
 			f.write(chunk)
@@ -141,7 +142,7 @@ class chunker:
 		''' returns MD5 of the chunk '''
 		try:
 			#logging.info("chunker:_getmd5 method invoked")
-			hasher = md5.new()
+			hasher = hashlib.md5()
 			hasher.update(chunk)
 			#logging.info("chunker:_getmd5 successful")
 			return hasher.hexdigest()
