@@ -2,6 +2,7 @@
 
 import logging
 import md5,sys,os
+import time
 from dblayer import *
 from datetime import datetime
 import sdds_constants
@@ -36,6 +37,7 @@ class chunker:
 			
 		'''		 	
 		logging.info("chunker:Chunkify: creating chunks for the file :%s",path)
+		start_time = time.time()
 		try:
 
 			if(not os.path.exists(path)):
@@ -54,9 +56,8 @@ class chunker:
 			minhash = None
 			fullhash = md5.new()
 			key = ""
-			start_time = datetime.now()
 			file_size = os.path.getsize(path)
-			logging.info("chunker:chunkify :: file shredding initiated for filesize :: %s (bytes) at time: %s", file_size, start_time) 
+			logging.info("chunker:chunkify :: file shredding initiated for filesize :: %s (bytes) at time: %s", file_size, datetime.now()) 
 		        total_data_written = 0	
 			with open(path, 'rb') as f:
 				blocks_already_present = 0
@@ -89,20 +90,23 @@ class chunker:
 			# checking whether file exists in db or not 
 			# already done
 			# 
-			logging.info("file chunking done ")
+			logging.info("%s file chunking done ", path)
 			logging.info("chunk list size %s", len(chunkmap))
-			#logging.debug("first chunk while inserting %s", chunkmap.values()[0]["data"])
 			
 			if self.db.is_fullhash_exists(minhash, fullhash):
-				logging.debug("there is an exact duplicate of the file")
+				logging.debug("there is an exact duplicate of the file %s", path)
 				self.db.add_minhash(path, file_size, minhash)
 				return
 				
 			self.db.add_minhash(path, file_size, minhash)
+			logging.info("%s - minhash added", path)
 			self.db.add_file_recipe(minhash, path, filerecipe)
+			logging.info("%s - file recipe added", path)
 			self.db.add_fullhash(minhash, fullhash)
+			logging.info("%s - minhash added", path)
 			self.db.insert_chunk_list(minhash, chunkmap)
-						        	
+			logging.info("%s - chunk list added ", path)
+			logging.info("time taken for chunking and indexing file %s [file size : %s bytes] - %f seconds", path, file_size, (time.time() - start_time) )		        	
 		except Exception,e:
 			print e
 			logging.error('chunker:chunkify failed with error : %s', str(e))
@@ -114,7 +118,7 @@ class chunker:
 			sys.exit(1)
 		minhash = self.db.get_minhash(file_absolute_path)
 		chunk_list = self.db.get_file_data(minhash, file_absolute_path)
-		logging.debug("chunk_list size %s", len(chunk_list))
+		logging.debug("%s chunk_list size %s", file_absolute_path, len(chunk_list))
 		f = open(file_absolute_path + "1", 'wb')
 		new_fullhash = md5.new()
 		#logging.debug("first chunk %s", chunk_list[0])
@@ -122,15 +126,16 @@ class chunker:
 			f.write(chunk)
 			new_fullhash.update(chunk)
 		new_fullhash = new_fullhash.hexdigest()
-		logging.debug("fullhash after stitching the file %s", new_fullhash)
+		logging.debug("%s fullhash after stitching the file %s", file_absolute_path, new_fullhash)
 		if(self.db.is_fullhash_exists(minhash, new_fullhash) == False):
 			logging.error("chunker : get_file : wrong full hash ")
 			#sys.exit(1)
-		logging.debug("file created successfully!")
-		f.close()			
-		f = open(file_absolute_path + "1", 'r')
-		wholehash = self._getmd5(f.read())
+		logging.debug("%s file created successfully ", file_absolute_path)
 		f.close()
+		logging.info("time taken for retrieving file %s - %f seconds", file_absolute_path, (time.time() - start_time) )		        	
+		#f = open(file_absolute_path + "1", 'r')
+		#wholehash = self._getmd5(f.read())
+		#f.close()
 	
 	def _getmd5(self,chunk):
 		''' returns MD5 of the chunk '''
@@ -144,20 +149,6 @@ class chunker:
 			logging.error('chunker:_getmd5 : returned error %s',e)
 			return None
 			
-	
-	def get_saved_space(self):
-		''' gets saved space '''
-		try:
-			db_chunks_count = self.db.get_chunks_count()
-			files_saved_size = db_chunks_count * CHUNK_SIZE 
-			total_input_size = self.db.get_total_input_size()
-			saved_space = total_input_size - files_saved_size
-			logging.debug("Saved Space : %s Bytes", saved_space)
-		except Exception, e:
-			logging.error('error in the get_saved_space %s ', e)
-			return None
-
-
 	def _getchunk(self, fhandler, offset):
 		''' given a offset creats a chunk of the file and returns it back '''
 		pass
