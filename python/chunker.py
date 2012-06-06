@@ -4,17 +4,17 @@ import logging
 import md5,sys,os
 from dblayer import *
 from datetime import datetime
+import sdds_constants
 
-
-LOG_FILE_NAME = 'vmdedup.log'
-CHUNK_SIZE = 4 * 1024 # 4 kb size
+#LOG_FILE_NAME = 'vmdedup.log'
+#CHUNK_SIZE = 4 * 1024 # 4 kb size
 class chunker:
-	''' This class all the code required for the chunking service. This service will be responsible for splitting of file into chunks and store them in cassandra '''
+	''' This class contains all the code required for the chunking service. This service will be responsible for splitting of file into chunks and storing them in cassandra. '''
 	def __init__(self):
 		 '''     1. setup connection to cassandra   2. intialise logger object   '''
 	         try:
-			 global LOG_FILE_NAME
-			 logging.basicConfig(filename =LOG_FILE_NAME, format='%(asctime)s %(lineno)d %(module)s %(message)s', level =logging.DEBUG)
+			 #global LOG_FILE_NAME
+			 #logging.basicConfig(filename =LOG_FILE_NAME, format='%(asctime)s %(lineno)d %(module)s %(message)s', level =logging.DEBUG)
 			 self.db = dblayer()
 		 except Exception,e:
 			logging.error("chunker:__init__ failed with error %s", e)
@@ -32,7 +32,7 @@ class chunker:
 					3.2.2 add an entry in File Table
 
 			Assumption:
-				This method assumes that the filename passed is unique and doesn't exists in the DB
+				This method assumes that the filename passed is unique and doesn't exist in the DB
 			
 		'''		 	
 		logging.info("chunker:Chunkify: creating chunks for the file :%s",path)
@@ -170,4 +170,4 @@ if __name__ == '__main__':
 		chunkerobj = chunker()
 		chunkerobj.chunkify(sys.argv[1])
 		#chunkerobj.get_file(sys.argv[1])
-		chunkerobj.get_saved_space()	
+		#chunkerobj.get_saved_space()	

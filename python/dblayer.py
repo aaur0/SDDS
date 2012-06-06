@@ -21,23 +21,12 @@ from pycassa.system_manager import *
 from pycassa.pool import ConnectionPool
 from pycassa import ColumnFamily
 from pycassa import NotFoundException
-LOGFILENAME = 'dblayer.log'
-HOST = 'localhost'
-PORT = '9160'
-# keyspaces
-MINHASH_KEYSPACE = 'minhash'
-FILES_KEYSPACE = 'files'
-# column families of minhash keyspace
-MINHASH_CHUNKS_CF = 'minhash_chunks'
-MINHASH_FILERECIPE_CF = 'minhash_filerecipe'
-MINHASH_FULLHASH_CF = 'minhash_fullhash'
-# column families of files keyspace
-FILES_MINHASH_CF = 'files_minhash'
+import sdds_constants
 
 class dblayer:
 	def __init__(self):
 		''' setup a connection to cassandra '''
-		logging.basicConfig(filename = LOGFILENAME, level = logging.DEBUG, format = '%(asctime)s %(lineno)d %(module)s %(message)s')
+		#logging.basicConfig(filename = LOGFILENAME, level = logging.DEBUG, format = '%(asctime)s %(lineno)d %(module)s %(message)s')
 		logging.info("inside dblayer:__init__ method")
 		address = "%s:%s" % (HOST,PORT)
 		try:
