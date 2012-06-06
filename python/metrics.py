@@ -25,4 +25,8 @@ class metrics:
                 except Exception, e:
                         logging.error('error in the get_saved_space %s ', e)
                         return None
-  	
+
+if __name__ == '__main__':
+	metricsobj = metrics()
+	metricsobj.get_saved_space()
+ 	
