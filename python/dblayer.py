@@ -32,12 +32,12 @@ class dblayer:
 		try:
 		     self.sysmgr = SystemManager(address)
 	             
-	             self.minhash_pool = ConnectionPool(MINHASH_KEYSPACE, [address], max_overflow = 0, pool_time = -1)
+	             self.minhash_pool = ConnectionPool(MINHASH_KEYSPACE, [address], max_overflow = 0, pool_time = -1, timeout = None)
 	             self.minhash_chunks_cf = ColumnFamily(self.minhash_pool, MINHASH_CHUNKS_CF)
 		     self.minhash_filerecipe_cf = ColumnFamily(self.minhash_pool, MINHASH_FILERECIPE_CF)
 		     self.minhash_fullhash_cf = ColumnFamily(self.minhash_pool, MINHASH_FULLHASH_CF)
 		     
-	             self.files_pool = ConnectionPool(FILES_KEYSPACE, [address], max_overflow = 0, pool_time = -1)
+	             self.files_pool = ConnectionPool(FILES_KEYSPACE, [address], max_overflow = 0, pool_time = -1, timeout = None)
 		     self.files_minhash_cf = ColumnFamily(self.files_pool, FILES_MINHASH_CF)
 		     
 		     logging.info("Exiting dblayer:__init__ :  connection to cassandra successful")
@@ -235,39 +235,46 @@ class dblayer:
 			db_chunk_id_keys = range(0, len(db_chunk_map))
 			
 			
-			#logging.debug('chunk_id_map: %s', chunk_id_map)
+			logging.debug('filerecipe length: %s', len(db_chunk_map))
 			chunk_data_list = []
 			# Also, get the row (that has all the chunk data) corresponding to the minhash value in the minhash column family
 			chunks_cf = self.minhash_chunks_cf 
 			num_cols = chunks_cf.get_count(minhash) #178025
 			logging.debug("Number of columns in chunks_cf %s", num_cols)
-			count = (int) (num_cols / 2000)
-			if (num_cols % 2000) != 0:
+			count = (int) (num_cols / 500)
+			if (num_cols % 500) != 0:
 				count = count + 1
 			logging.info("iterations: %s", count)
 			minhash_row = {}
+			minhash_chunk_map = {}
 			try:	
 				index = 0
 				#while(True):
+                                temp_hash_id = chunks_cf.get(minhash, column_count = 1).keys()[0]
 				for index in range(0, count):
-					temp = chunks_cf.get(minhash, column_start=(str)(2000 * index), column_count=2000)
-					minhash_row.update(temp)
-					logging.info("Chunk no. %s", index)
+					temp = chunks_cf.get(minhash, column_start = str(temp_hash_id), column_count = 501 )
+					temp_hash_id = temp.keys()[-1]
+					if(index != 0):
+						del temp.keys()[0]
+					minhash_chunk_map.update(temp)
+					#minhash_row.update(temp)
+					#logging.info("Chunk no. %s", index)
 					#index = index+1
+			
 			except NotFoundException, e:
 				logging.error("NotFoundException %s", e)
 			
-			logging.info("minhash_row length %s", len(minhash_row))	
+			#logging.info("minhash_row length %s", len(minhash_row))	
 			#logging.debug('minhash_row: %s', minhash_row)
 			# Then, for each of the chunk ids, get the chunk data and append it to the chunk_data_list.
 			#logging.debug("db_chunk_map.values() %s", db_chunk_map.values())
 			#logging.debug("minhash_row.keys() %s", minhash_row.keys())
-			  
+			logging.debug("bin map length: %s", len(minhash_chunk_map.keys()))
 			for key in db_chunk_id_keys:
 				#logging.debug("key %s", key)
 				chunk_id = db_chunk_map[str(key)]
 			        #logging.debug("minhash_row[key] %s", minhash_row[key]['data'])
-				chunk_data_list.append(minhash_row[chunk_id]['data'])
+				chunk_data_list.append(minhash_chunk_map[chunk_id]['data'])
 			logging.debug("chunk_data_list obtained")
 			return chunk_data_list
 		except Exception, e:

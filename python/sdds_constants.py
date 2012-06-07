@@ -4,7 +4,7 @@ import logging
 
 LOG_FILE_NAME = 'vmdedup.log'
 CHUNK_SIZE = 4 * 1024 # 4 kb size
-HOST = '169.231.50.3'
+HOST = 'localhost'
 PORT = '9160'
 # keyspaces
 MINHASH_KEYSPACE = 'minhash'
