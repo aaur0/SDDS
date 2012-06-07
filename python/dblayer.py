@@ -250,7 +250,7 @@ class dblayer:
 				index = 0
 				#while(True):
 				for index in range(0, count):
-					temp = chunks_cf.get(minhash, column_start=(2000 * index), column_count=2000)
+					temp = chunks_cf.get(minhash, column_start=(str)(2000 * index), column_count=2000)
 					minhash_row.update(temp)
 					logging.info("Chunk no. %s", index)
 					#index = index+1
