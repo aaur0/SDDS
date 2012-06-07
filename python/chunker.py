@@ -11,16 +11,11 @@ from sdds_constants import *
 from optparse import OptionParser
 from time import strftime
 
-
-#LOG_FILE_NAME = 'vmdedup.log'
-#CHUNK_SIZE = 4 * 1024 # 4 kb size
 class chunker:
 	''' This class contains all the code required for the chunking service. This service will be responsible for splitting of file into chunks and storing them in cassandra. '''
 	def __init__(self):
 		 '''     1. setup connection to cassandra   2. intialise logger object   '''
 	         try:
-			 #global LOG_FILE_NAME
-			 #logging.basicConfig(filename =LOG_FILE_NAME, format='%(asctime)s %(lineno)d %(module)s %(message)s', level =logging.DEBUG)
 			 self.db = dblayer()
 			 self.metricsObj = metrics()			
 		 except Exception,e:
@@ -68,9 +63,7 @@ class chunker:
 			with open(path, 'rb') as f:
 				blocks_already_present = 0
 				while(True):
-					chunk = f.read(CHUNK_SIZE)
-					#logging.info("chunker:chunkify :: a chunk of size %s  and type %s was read", str(len(chunk)), type(chunk))
-					
+					chunk = f.read(CHUNK_SIZE)			
 					if("" == chunk):
 						break
 					key = self._getmd5(chunk)
@@ -89,8 +82,6 @@ class chunker:
 					if (None == minhash) or (key < minhash) :
 						minhash = key
 					fullhash.update(chunk)	
-					#logging.info("chunker:chunkify :: a chunk of size %s  and type %s was read", str(len(chunk)), type(chunk))
-                    
 			fullhash = fullhash.hexdigest()
 			
 			# checking whether file exists in db or not 
@@ -119,6 +110,7 @@ class chunker:
 			sys.exit(1)
 	
 	def get_file(self, file_absolute_path, file_new_absolute_path):
+		''' Gets the specified file from the storage '''
 		start_time = time.time()
 		try:
 			if(self.db.is_file_exists(file_absolute_path) == False):
@@ -129,7 +121,6 @@ class chunker:
 			logging.debug("%s chunk_list size %s", file_absolute_path, len(chunk_list))
 			f = open(file_new_absolute_path, 'wb')
 			new_fullhash = hashlib.md5()
-			#logging.debug("first chunk %s", chunk_list[0])
 			for chunk in chunk_list:
 				f.write(chunk)
 				new_fullhash.update(chunk)
@@ -137,7 +128,6 @@ class chunker:
 			logging.debug("%s fullhash after stitching the file %s", file_absolute_path, new_fullhash)
 			if(self.db.is_fullhash_exists(minhash, new_fullhash) == False):
 				logging.error("chunker : get_file : wrong full hash ")
-				#sys.exit(1)
 			logging.debug("%s file created successfully ", file_new_absolute_path)
 			f.close()
 			logging.info("time taken for retrieving file %s - %f seconds", file_new_absolute_path, (time.time() - start_time))
@@ -150,10 +140,8 @@ class chunker:
 	def _getmd5(self,chunk):
 		''' returns MD5 of the chunk '''
 		try:
-			#logging.info("chunker:_getmd5 method invoked")
 			hasher = hashlib.md5()
 			hasher.update(chunk)
-			#logging.info("chunker:_getmd5 successful")
 			return hasher.hexdigest()
 		except Exception,e:
 			logging.error('chunker:_getmd5 : returned error %s',e)
@@ -164,6 +152,7 @@ class chunker:
 		pass
 
 	def getMetric(self):
+		''' Gets the efficiency of the system in terms of space saved'''
 		self.metricsObj.get_saved_space()
 
 if __name__ == '__main__':
