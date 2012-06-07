@@ -1,21 +1,21 @@
 #! /usr/bin/exec python
 
 import logging
-import md5,sys,os
+import sys,os
 from dblayer import *
 from datetime import datetime
 
 class metrics:
 	''' This class contains functionalities to calculate important metrics in order to analyse the overall efficiency of the system.'''
-      
-      def __init__(self):
+	def __init__(self):
 		try:
 			self.db = dblayer()
 		except Exception, e:
 			logging.error("metrics:___init__ failed with error %s", e)
+			return None
 
-     def get_saved_space(self):
-                ''' gets saved space '''
+     	def get_saved_space(self):
+		''' gets saved space '''
                 try:
                         db_chunks_count = self.db.get_chunks_count()
                         files_saved_size = db_chunks_count * CHUNK_SIZE
@@ -25,8 +25,3 @@ class metrics:
                 except Exception, e:
                         logging.error('error in the get_saved_space %s ', e)
                         return None
-
-if __name__ == '__main__':
-	metricsobj = metrics()
-	metricsobj.get_saved_space()
- 	

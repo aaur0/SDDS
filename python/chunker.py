@@ -5,8 +5,12 @@ import hashlib
 import sys,os
 import time
 from dblayer import *
+from metrics import *
 from datetime import datetime
 from sdds_constants import *
+from optparse import OptionParser
+from time import strftime
+
 
 #LOG_FILE_NAME = 'vmdedup.log'
 #CHUNK_SIZE = 4 * 1024 # 4 kb size
@@ -18,6 +22,7 @@ class chunker:
 			 #global LOG_FILE_NAME
 			 #logging.basicConfig(filename =LOG_FILE_NAME, format='%(asctime)s %(lineno)d %(module)s %(message)s', level =logging.DEBUG)
 			 self.db = dblayer()
+			 self.metricsObj = metrics()			
 		 except Exception,e:
 			logging.error("chunker:__init__ failed with error %s", e)
 			sys.exit(1)
@@ -113,30 +118,34 @@ class chunker:
 			logging.error('chunker:chunkify failed with error : %s', str(e))
 			sys.exit(1)
 	
-	def get_file(self, file_absolute_path):
-		if(self.db.is_file_exists(file_absolute_path) == False):
-			logging.error("chunker : get_file : file not found in database")
-			sys.exit(1)
-		minhash = self.db.get_minhash(file_absolute_path)
-		chunk_list = self.db.get_file_data(minhash, file_absolute_path)
-		logging.debug("%s chunk_list size %s", file_absolute_path, len(chunk_list))
-		f = open(file_absolute_path + "1", 'wb')
-		new_fullhash = hashlib.md5()
-		#logging.debug("first chunk %s", chunk_list[0])
-		for chunk in chunk_list:
-			f.write(chunk)
-			new_fullhash.update(chunk)
-		new_fullhash = new_fullhash.hexdigest()
-		logging.debug("%s fullhash after stitching the file %s", file_absolute_path, new_fullhash)
-		if(self.db.is_fullhash_exists(minhash, new_fullhash) == False):
-			logging.error("chunker : get_file : wrong full hash ")
-			#sys.exit(1)
-		logging.debug("%s file created successfully ", file_absolute_path)
-		f.close()
-		logging.info("time taken for retrieving file %s - %f seconds", file_absolute_path, (time.time() - start_time) )		        	
-		#f = open(file_absolute_path + "1", 'r')
-		#wholehash = self._getmd5(f.read())
-		#f.close()
+	def get_file(self, file_absolute_path, file_new_absolute_path):
+		start_time = time.time()
+		try:
+			if(self.db.is_file_exists(file_absolute_path) == False):
+				logging.error("chunker : get_file : file not found in database")
+				sys.exit(1)
+			minhash = self.db.get_minhash(file_absolute_path)
+			chunk_list = self.db.get_file_data(minhash, file_absolute_path)
+			logging.debug("%s chunk_list size %s", file_absolute_path, len(chunk_list))
+			f = open(file_new_absolute_path, 'wb')
+			new_fullhash = hashlib.md5()
+			#logging.debug("first chunk %s", chunk_list[0])
+			for chunk in chunk_list:
+				f.write(chunk)
+				new_fullhash.update(chunk)
+			new_fullhash = new_fullhash.hexdigest()
+			logging.debug("%s fullhash after stitching the file %s", file_absolute_path, new_fullhash)
+			if(self.db.is_fullhash_exists(minhash, new_fullhash) == False):
+				logging.error("chunker : get_file : wrong full hash ")
+				#sys.exit(1)
+			logging.debug("%s file created successfully ", file_new_absolute_path)
+			f.close()
+			logging.info("time taken for retrieving file %s - %f seconds", file_new_absolute_path, (time.time() - start_time))
+		except Exception,e:
+			print e
+			logging.error('chunker:get_file failed with error : %s', str(e))
+			sys.exit(1)     	
+
 	
 	def _getmd5(self,chunk):
 		''' returns MD5 of the chunk '''
@@ -154,12 +163,38 @@ class chunker:
 		''' given a offset creats a chunk of the file and returns it back '''
 		pass
 
+	def getMetric(self):
+		self.metricsObj.get_saved_space()
+
 if __name__ == '__main__':
-	if len(sys.argv) !=2:
-		logging.error("invalid argumnets specified : chunkify <pathtothefile> ")
-		sys.exit(1)
+
+	parser = OptionParser()
+	parser.add_option("-f", "--file", dest="filename")
+	parser.add_option("-s", "--set", action="store_true", dest="set")
+	parser.add_option("-g", "--get", action="store_true", dest="get")
+	parser.add_option("-t", "--stat", action="store_true", dest="stat")
+
+	(options, args) = parser.parse_args()
+	chunkerobj = chunker()
+
+	if options.stat:
+		chunkerobj.getMetric()
+	elif options.set:
+		if None != options.filename:
+			chunkerobj.chunkify(options.filename)
+		else:
+			print "enter file name to backup"
+	elif options.get:
+		if None != options.filename:
+			chunkerobj.get_file(options.filename, options.filename + "_" + strftime("%Y-%m-%d_%H-%M-%S"))
+		else:
+			print "enter file name to backup"
 	else:
-		chunkerobj = chunker()
-		chunkerobj.chunkify(sys.argv[1])
-		#chunkerobj.get_file(sys.argv[1])
-		#chunkerobj.get_saved_space()	
+		print " <<<<<<<<<<<<< Backup client >>>>>>>>>>>>>>>>>"
+		print " Help " 
+		print "\t -s to store a file "
+		print "\t -g to retrieve a file "
+		print "\t -f to specify the file name u want to store or retrieve "
+		print "\t -t to get the stats "
+	
+		
