@@ -32,12 +32,12 @@ class dblayer:
 		try:
 		     self.sysmgr = SystemManager(address)
 	             
-	             self.minhash_pool = ConnectionPool(MINHASH_KEYSPACE, [address])
+	             self.minhash_pool = ConnectionPool(MINHASH_KEYSPACE, [address], max_overflow = 0, pool_time = -1)
 	             self.minhash_chunks_cf = ColumnFamily(self.minhash_pool, MINHASH_CHUNKS_CF)
 		     self.minhash_filerecipe_cf = ColumnFamily(self.minhash_pool, MINHASH_FILERECIPE_CF)
 		     self.minhash_fullhash_cf = ColumnFamily(self.minhash_pool, MINHASH_FULLHASH_CF)
 		     
-	             self.files_pool = ConnectionPool(FILES_KEYSPACE, [address])
+	             self.files_pool = ConnectionPool(FILES_KEYSPACE, [address], max_overflow = 0, pool_time = -1)
 		     self.files_minhash_cf = ColumnFamily(self.files_pool, FILES_MINHASH_CF)
 		     
 		     logging.info("Exiting dblayer:__init__ :  connection to cassandra successful")
@@ -154,6 +154,7 @@ class dblayer:
 		try:	
 			logging.debug("dblayer: insert_chunk_list")
 			colfamily = self.minhash_chunks_cf
+			db_chunk_map = {}
 			try:
 				db_chunk_map = colfamily.get(minhash)
 				for chunk_hash in chunk_map.keys():
@@ -165,9 +166,20 @@ class dblayer:
 						db_chunk_map[chunk_hash]['ref'] = value["ref_count"] 
 			except NotFoundException, e:
 				db_chunk_map = chunk_map
-			colfamily.insert(minhash, db_chunk_map)
-			logging.debug("chunk_map successfully added")
-	        #	update_chunk_ref(this, minhash, chunk_hash,db_chunk_map,1)
+			#colfamily.insert(minhash, db_chunk_map)
+			temp_dict = {}
+                        count = 1
+                        for key, value in db_chunk_map.items():
+                               temp_dict[key] = value
+                               if count % 500 == 0:
+                                       colfamily.insert(minhash, temp_dict)
+                                       logging.info("Batch insert")
+                                       temp_dict = {}
+                               count = count+1
+                        if len(temp_dict) > 0:
+                               colfamily.insert(minhash, temp_dict)
+                        logging.debug("chunk_map successfully added")
+             	        #update_chunk_ref(this, minhash, chunk_hash,db_chunk_map,1)
 		except Exception, e:
 			logging.error('Error in dblayer:insert_chunk_list : %s', e)
 			raise e
