@@ -186,7 +186,8 @@ if __name__ == '__main__':
 			print "enter file name to backup"
 	elif options.get:
 		if None != options.filename:
-			chunkerobj.get_file(options.filename, options.filename + "_" + strftime("%Y-%m-%d_%H-%M-%S"))
+			fname, fext = os.path.splitext(options.filename)
+			chunkerobj.get_file(options.filename, fname + "_" + strftime("%Y-%m-%d_%H-%M-%S") + fext)
 		else:
 			print "enter file name to backup"
 	else:
