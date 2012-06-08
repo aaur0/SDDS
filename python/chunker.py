@@ -76,6 +76,7 @@ class chunker:
 					if(chunkmap.has_key(key)):
 						value = chunkmap[key]
 						value["ref_count"] = str( int(value["ref_count"]) + 1)
+						blocks_already_present = blocks_already_present + 1
 					else:
 						value = {"data":chunk, "ref_count":"1"}
 						chunkmap[key] = value
@@ -104,6 +105,8 @@ class chunker:
 			self.db.insert_chunk_list(minhash, chunkmap)
 			logging.info("%s - chunk list added ", path)
 			logging.info("time taken for chunking and indexing file %s [file size : %s bytes] - %f seconds", path, file_size, (time.time() - start_time) )		        	
+			logging.info("Number of chunks already present in the system : %s",blocks_already_present)
+			logging.info("Total Space saved for the file = %s Kb",  blocks_already_present * 4)
 		except Exception,e:
 			print e
 			logging.error('chunker:chunkify failed with error : %s', str(e))
