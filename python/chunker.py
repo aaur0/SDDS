@@ -17,7 +17,7 @@ class chunker:
 		 '''     1. setup connection to cassandra   2. intialise logger object   '''
 	         try:
 			 self.db = dblayer()
-			 self.metricsObj = metrics()			
+			 #self.metricsObj = metrics()			
 		 except Exception,e:
 			logging.error("chunker:__init__ failed with error %s", e)
 			sys.exit(1)
@@ -105,8 +105,8 @@ class chunker:
 			self.db.insert_chunk_list(minhash, chunkmap)
 			logging.info("%s - chunk list added ", path)
 			logging.info("time taken for chunking and indexing file %s [file size : %s bytes] - %f seconds", path, file_size, (time.time() - start_time) )		        	
-			logging.info("Number of chunks already present in the system : %s",blocks_already_present)
-			logging.info("Total Space saved for the file = %s Kb",  blocks_already_present * 4)
+			#logging.info("Number of chunks already present in the system : %s",blocks_already_present)
+			#logging.info("Total Space saved for the file = %s Kb",  blocks_already_present * 4)
 		except Exception,e:
 			print e
 			logging.error('chunker:chunkify failed with error : %s', str(e))

@@ -28,16 +28,16 @@ class dblayer:
 		''' setup a connection to cassandra '''
 		#logging.basicConfig(filename = LOGFILENAME, level = logging.DEBUG, format = '%(asctime)s %(lineno)d %(module)s %(message)s')
 		logging.info("inside dblayer:__init__ method")
-		address = "%s:%s" % (HOST,PORT)
+		#address = "%s:%s" % (HOST,PORT)
 		try:
-		     self.sysmgr = SystemManager(address)
+		     #self.sysmgr = SystemManager(address)
 	             
-	             self.minhash_pool = ConnectionPool(MINHASH_KEYSPACE, [address], max_overflow = 0, pool_time = -1, timeout = None)
+	             self.minhash_pool = ConnectionPool(MINHASH_KEYSPACE, servers, max_overflow = 0, pool_time = -1, timeout = None)
 	             self.minhash_chunks_cf = ColumnFamily(self.minhash_pool, MINHASH_CHUNKS_CF)
 		     self.minhash_filerecipe_cf = ColumnFamily(self.minhash_pool, MINHASH_FILERECIPE_CF)
 		     self.minhash_fullhash_cf = ColumnFamily(self.minhash_pool, MINHASH_FULLHASH_CF)
 		     
-	             self.files_pool = ConnectionPool(FILES_KEYSPACE, [address], max_overflow = 0, pool_time = -1, timeout = None)
+	             self.files_pool = ConnectionPool(FILES_KEYSPACE, servers, max_overflow = 0, pool_time = -1, timeout = None)
 		     self.files_minhash_cf = ColumnFamily(self.files_pool, FILES_MINHASH_CF)
 		     
 		     logging.info("Exiting dblayer:__init__ :  connection to cassandra successful")
@@ -161,10 +161,12 @@ class dblayer:
 			try:
 				db_chunk_map = colfamily.get(minhash)
 				for chunk_hash in chunk_map.keys():
+                	                value = chunk_map.get(chunk_hash)
 					if db_chunk_map.has_key( chunk_hash ):
-                	                	value = chunk_map.get(chunk_hash)		
-						db_chunk_map[chunk_hash]['ref'] = str(int(db_chunk_map[chunk_hash]['ref']) + value["ref_count"])
+						ref = db_chunk_map[chunk_hash]['ref'] if db_chunk_map[chunk_hash].has_key('ref') else "0"		
+						db_chunk_map[chunk_hash]['ref'] = str(int(ref) + int(value["ref_count"]))
 					else:
+						db_chunk_map[chunk_hash] = {}
 						db_chunk_map[chunk_hash]['data'] = value["data"]
 						db_chunk_map[chunk_hash]['ref'] = value["ref_count"] 
 			except NotFoundException, e:
