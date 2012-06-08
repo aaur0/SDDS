@@ -100,7 +100,7 @@ class chunker:
 			self.db.add_file_recipe(minhash, path, filerecipe)
 			logging.info("%s - file recipe added", path)
 			self.db.add_fullhash(minhash, fullhash)
-			logging.info("%s - minhash added", path)
+			logging.info("%s - fullhash added", path)
 			self.db.insert_chunk_list(minhash, chunkmap)
 			logging.info("%s - chunk list added ", path)
 			logging.info("time taken for chunking and indexing file %s [file size : %s bytes] - %f seconds", path, file_size, (time.time() - start_time) )		        	
