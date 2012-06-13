@@ -17,7 +17,7 @@ class chunker:
 		 '''     1. setup connection to cassandra   2. intialise logger object   '''
 	         try:
 			 self.db = dblayer()
-			 #self.metricsObj = metrics()			
+			 self.metricsObj = metrics()			
 		 except Exception,e:
 			logging.error("chunker:__init__ failed with error %s", e)
 			sys.exit(1)
